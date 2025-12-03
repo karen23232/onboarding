@@ -8,7 +8,7 @@ const Asignaciones = () => {
   const [colaboradores, setColaboradores] = useState([]);
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [creandoAsignacion, setCreandoAsignacion] = useState(false); // ✅ NUEVO: estado separado
+  const [creandoAsignacion, setCreandoAsignacion] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -50,7 +50,7 @@ const Asignaciones = () => {
 
     } catch (error) {
       console.error('❌ Error al cargar datos:', error);
-      setError('Error al cargar los datos. Por favor, recarga la página.');
+      setError('Error al cargar los datos.');
     } finally {
       setLoading(false);
     }
@@ -67,25 +67,56 @@ const Asignaciones = () => {
     try {
       setError(null);
       setSuccessMessage('');
-      setCreandoAsignacion(true); // ✅ Usar estado separado
+      setCreandoAsignacion(true);
 
-      await asignacionesAPI.crear(
+      // ✅ CREAR LA ASIGNACIÓN
+      const response = await asignacionesAPI.crear(
         parseInt(formData.colaborador_id),
         parseInt(formData.evento_id)
       );
 
-      // ✅ ÉXITO
+      console.log('✅ Asignación creada:', response.data);
+
+      // ✅ OBTENER DATOS DEL COLABORADOR Y EVENTO SELECCIONADOS
+      const colaboradorSeleccionado = colaboradores.find(
+        c => c.id === parseInt(formData.colaborador_id)
+      );
+      
+      const eventoSeleccionado = eventos.find(
+        e => e.id === parseInt(formData.evento_id)
+      );
+
+      // ✅ CREAR OBJETO DE NUEVA ASIGNACIÓN PARA LA TABLA
+      const nuevaAsignacion = {
+        colaborador_id: parseInt(formData.colaborador_id),
+        evento_id: parseInt(formData.evento_id),
+        nombre_completo: colaboradorSeleccionado?.nombre_completo || 'Colaborador',
+        nombre_evento: eventoSeleccionado?.nombre_evento || 'Evento',
+        tipo: eventoSeleccionado?.tipo || 'Sin tipo',
+        fecha_inicio: eventoSeleccionado?.fecha_inicio || new Date(),
+        completado: false
+      };
+
+      // ✅ AGREGAR A LA TABLA INMEDIATAMENTE (SIN ESPERAR BACKEND)
+      setAsignaciones(prev => [...prev, nuevaAsignacion]);
+
+      // ✅ MENSAJE DE ÉXITO
       setSuccessMessage('✅ Asignación creada exitosamente');
+      
+      // ✅ LIMPIAR FORMULARIO Y CERRAR
       setFormData({ colaborador_id: '', evento_id: '' });
       setMostrarFormulario(false);
-      
-      // ✅ RECARGAR sin afectar el loading del formulario
-      await cargarDatos();
 
-      // ✅ OCULTAR MENSAJE
+      // ✅ OCULTAR MENSAJE DESPUÉS DE 3 SEGUNDOS
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
+
+      // ✅ RECARGAR EN BACKGROUND (OPCIONAL - para sincronizar)
+      // Esto se hace silenciosamente sin bloquear la UI
+      cargarDatos().catch(err => {
+        console.warn('⚠️ Error al sincronizar:', err);
+      });
 
     } catch (error) {
       console.error('❌ Error al crear asignación:', error);
@@ -95,14 +126,14 @@ const Asignaciones = () => {
       if (mensajeError && mensajeError.includes('ya existe')) {
         setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación.');
       } else {
-        setError(`❌ Error: ${mensajeError || 'Error desconocido'}`);
+        setError(`❌ Error: ${mensajeError || 'No se pudo crear la asignación'}`);
       }
 
       setTimeout(() => {
         setError(null);
       }, 5000);
     } finally {
-      setCreandoAsignacion(false); // ✅ Siempre se ejecuta
+      setCreandoAsignacion(false);
     }
   };
 
@@ -117,8 +148,14 @@ const Asignaciones = () => {
       
       await asignacionesAPI.eliminar(colaboradorId, eventoId);
       
+      // ✅ ELIMINAR DE LA TABLA INMEDIATAMENTE
+      setAsignaciones(prev => 
+        prev.filter(asig => 
+          !(asig.colaborador_id === colaboradorId && asig.evento_id === eventoId)
+        )
+      );
+      
       setSuccessMessage('✅ Asignación eliminada exitosamente');
-      await cargarDatos();
 
       setTimeout(() => {
         setSuccessMessage('');
@@ -231,7 +268,7 @@ const Asignaciones = () => {
                     onChange={(e) => handleInputChange('colaborador_id', e.target.value)}
                     className="form-input"
                     required
-                    disabled={creandoAsignacion} // ✅ Deshabilitar durante creación
+                    disabled={creandoAsignacion}
                   >
                     <option value="">Seleccionar...</option>
                     {colaboradores.map(colaborador => (
@@ -251,7 +288,7 @@ const Asignaciones = () => {
                     onChange={(e) => handleInputChange('evento_id', e.target.value)}
                     className="form-input"
                     required
-                    disabled={creandoAsignacion} // ✅ Deshabilitar durante creación
+                    disabled={creandoAsignacion}
                   >
                     <option value="">Seleccionar...</option>
                     {eventos.map(evento => (
@@ -268,7 +305,7 @@ const Asignaciones = () => {
                   type="button" 
                   onClick={handleCancelar} 
                   className="btn btn-secondary"
-                  disabled={creandoAsignacion} // ✅ Deshabilitar durante creación
+                  disabled={creandoAsignacion}
                 >
                   Cancelar
                 </button>
