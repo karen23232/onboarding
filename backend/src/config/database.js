@@ -1,5 +1,5 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+const { Pool } = require("pg");
+require("dotenv").config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -8,12 +8,12 @@ const pool = new Pool({
   }
 });
 
-pool.on('connect', () => {
-  console.log('✅ Conectado a PostgreSQL');
+pool.on("connect", () => {
+  console.log("✅ Conectado a PostgreSQL (Railway)");
 });
 
-pool.on('error', (err) => {
-  console.error('❌ Error en la conexión a PostgreSQL:', err);
+pool.on("error", (err) => {
+  console.error("❌ Error en la conexión a PostgreSQL:", err);
 });
 
 module.exports = pool;
