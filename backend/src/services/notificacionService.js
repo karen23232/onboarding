@@ -154,25 +154,54 @@ class NotificacionService {
   }
 
   /**
-   * ✅ NUEVO: Enviar correo de confirmación cuando se crea una asignación
+   * ✅ CORREGIDO: Enviar correo de confirmación cuando se crea una asignación
+   * Ahora con VALIDACIONES para evitar errores de "Cannot read properties of null"
    */
   static async enviarCorreoConfirmacionAsignacion(colaborador, evento) {
     try {
-      const fechaEvento = new Date(evento.fecha_inicio).toLocaleDateString('es-CO', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      });
+      // ✅ VALIDACIÓN 1: Verificar que colaborador existe
+      if (!colaborador) {
+        throw new Error('❌ Colaborador no proporcionado o es null');
+      }
 
-      const fechaFin = new Date(evento.fecha_fin).toLocaleDateString('es-CO', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      });
+      // ✅ VALIDACIÓN 2: Verificar que evento existe
+      if (!evento) {
+        throw new Error('❌ Evento no proporcionado o es null');
+      }
+
+      // ✅ VALIDACIÓN 3: Verificar que el colaborador tiene correo
+      // El campo puede ser "correo" o "email" dependiendo de dónde venga
+      const emailColaborador = colaborador.correo || colaborador.email;
+      
+      if (!emailColaborador) {
+        throw new Error(`❌ Colaborador "${colaborador.nombre_completo || colaborador.id || 'desconocido'}" no tiene correo configurado`);
+      }
+
+      // ✅ VALIDACIÓN 4: Verificar que el evento tiene nombre
+      if (!evento.nombre_evento) {
+        throw new Error(`❌ Evento con ID ${evento.id || 'desconocido'} no tiene nombre`);
+      }
+
+      // ✅ Formatear fechas de forma segura
+      const fechaEvento = evento.fecha_inicio 
+        ? new Date(evento.fecha_inicio).toLocaleDateString('es-CO', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })
+        : 'Fecha por confirmar';
+
+      const fechaFin = evento.fecha_fin
+        ? new Date(evento.fecha_fin).toLocaleDateString('es-CO', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })
+        : null;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM,
-        to: colaborador.correo,
+        to: emailColaborador, // ← USAR LA VARIABLE VALIDADA
         subject: `✅ Has sido asignado a: ${evento.nombre_evento}`,
         html: `
           <!DOCTYPE html>
@@ -195,7 +224,7 @@ class NotificacionService {
                 <h1 style="margin: 0;">🎉 Nueva Asignación de Onboarding</h1>
               </div>
               <div class="content">
-                <p>Hola <strong>${colaborador.nombre_completo}</strong>,</p>
+                <p>Hola <strong>${colaborador.nombre_completo || 'Colaborador'}</strong>,</p>
                 
                 <p>Te informamos que has sido asignado al siguiente evento de onboarding técnico:</p>
                 
@@ -203,16 +232,18 @@ class NotificacionService {
                   <h2 style="margin-top: 0; color: #003da5;">${evento.nombre_evento}</h2>
                   
                   <div class="event-detail">
-                    <span class="label">📋 Tipo:</span> ${evento.tipo}
+                    <span class="label">📋 Tipo:</span> ${evento.tipo || 'General'}
                   </div>
                   
                   <div class="event-detail">
                     <span class="label">📅 Fecha de inicio:</span> ${fechaEvento}
                   </div>
                   
+                  ${fechaFin ? `
                   <div class="event-detail">
                     <span class="label">📅 Fecha de fin:</span> ${fechaFin}
                   </div>
+                  ` : ''}
                   
                   ${evento.descripcion ? `
                     <div class="event-detail">
@@ -251,12 +282,16 @@ class NotificacionService {
         )
       ]);
 
-      console.log(`✅ Correo de confirmación enviado a ${colaborador.correo}: ${info.messageId || 'sin ID'}`);
+      console.log(`✅ Correo de confirmación enviado a ${emailColaborador}: ${info.messageId || 'sin ID'}`);
       return info;
 
     } catch (error) {
-      console.error(`❌ Error al enviar correo de confirmación a ${colaborador.correo}:`, error.message);
-      throw error;
+      // ✅ MEJOR MANEJO DE ERRORES
+      const emailColaborador = colaborador?.correo || colaborador?.email || 'desconocido';
+      console.error(`❌ Error al enviar correo de confirmación a ${emailColaborador}:`, error.message);
+      
+      // Re-lanzar el error con más contexto
+      throw new Error(`Error al enviar correo de confirmación: ${error.message}`);
     }
   }
 
@@ -295,18 +330,29 @@ class NotificacionService {
 
   // Formatear fecha
   static formatearFecha(fecha) {
-    const opciones = { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      timeZone: 'America/Bogota'
-    };
-    return new Date(fecha).toLocaleDateString('es-CO', opciones);
+    if (!fecha) return 'Fecha no disponible';
+    
+    try {
+      const opciones = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        timeZone: 'America/Bogota'
+      };
+      return new Date(fecha).toLocaleDateString('es-CO', opciones);
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      return 'Fecha inválida';
+    }
   }
 
   // Enviar alerta de prueba
   static async enviarCorreoPrueba(destinatario) {
     try {
+      if (!destinatario) {
+        throw new Error('Destinatario no proporcionado');
+      }
+
       const mailOptions = {
         from: process.env.EMAIL_FROM,
         to: destinatario,

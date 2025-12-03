@@ -40,15 +40,24 @@ class AsignacionController {
         correo_programado: true
       });
 
+      // 🔍 DEBUG: Ver qué datos estamos enviando al servicio de correo
+      console.log('🔍 ========== DEBUG CORREO ==========');
+      console.log('🔍 Colaborador completo:', JSON.stringify(colaborador, null, 2));
+      console.log('🔍 Evento completo:', JSON.stringify(evento, null, 2));
+      console.log('🔍 Correo del colaborador:', colaborador.correo);
+      console.log('🔍 Email del colaborador:', colaborador.email);
+      console.log('🔍 Nombre del evento:', evento.nombre_evento);
+      console.log('🔍 ===================================');
+
       // 📧 ENVIAR CORREO EN SEGUNDO PLANO (SIN AWAIT)
       const NotificacionService = require('../services/notificacionService');
       NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento)
         .then(() => {
-          console.log(`✅ Correo de confirmación enviado a ${colaborador.correo}`);
+          console.log(`✅ Correo de confirmación enviado a ${colaborador.correo || colaborador.email}`);
         })
         .catch(emailError => {
-          console.error(`❌ Error al enviar correo a ${colaborador.correo}:`, emailError.message);
-          // El error de correo no afecta la asignación ya creada
+          console.error(`❌ Error al enviar correo:`, emailError.message);
+          console.error(`❌ Stack completo:`, emailError.stack);
         });
 
     } catch (error) {
@@ -267,8 +276,13 @@ class AsignacionController {
         try {
           const colaborador = await Colaborador.obtenerPorId(colaborador_id);
           if (colaborador) {
+            // 🔍 DEBUG para cada colaborador
+            console.log(`🔍 DEBUG Múltiple - Enviando a: ${colaborador.correo || colaborador.email}`);
+            
             await NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento);
-            console.log(`✅ Correo enviado a ${colaborador.correo}`);
+            console.log(`✅ Correo enviado a ${colaborador.correo || colaborador.email}`);
+          } else {
+            console.warn(`⚠️ Colaborador con ID ${colaborador_id} no encontrado`);
           }
         } catch (emailError) {
           console.error(`❌ Error al enviar correo a colaborador ${colaborador_id}:`, emailError.message);
