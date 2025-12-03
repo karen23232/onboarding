@@ -1,47 +1,30 @@
--- Script de inicialización de la base de datos
+-- =========================================
+-- SCRIPT COMPLETO DE INICIALIZACIÓN BD
+-- Onboarding Banco
+-- =========================================
 
--- Crear base de datos (ejecutar primero en psql)
--- CREATE DATABASE onboarding_db;
-
--- Conectar a la base de datos
--- \c onboarding_db
--- Script para agregar autenticación al sistema
-
--- Tabla de usuarios
+------------------------------------------------------------
+-- TABLA: usuarios
+------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     nombre_completo VARCHAR(255) NOT NULL,
     correo VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    rol VARCHAR(50) DEFAULT 'colaborador' CHECK (rol IN ('admin', 'rrhh', 'colaborador')),
+    rol VARCHAR(50) DEFAULT 'colaborador' 
+        CHECK (rol IN ('admin', 'rrhh', 'colaborador')),
     activo BOOLEAN DEFAULT TRUE,
     ultimo_acceso TIMESTAMP,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices
 CREATE INDEX IF NOT EXISTS idx_usuarios_correo ON usuarios(correo);
 CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol);
 
--- Trigger para actualizar timestamp
-CREATE TRIGGER trigger_actualizar_usuarios
-BEFORE UPDATE ON usuarios
-FOR EACH ROW
-EXECUTE FUNCTION actualizar_timestamp();
-
--- Insertar usuario administrador por defecto
--- Password: admin123 (debes cambiarlo en producción)
--- Hash generado con bcrypt
-INSERT INTO usuarios (nombre_completo, correo, password, rol) VALUES
-('Administrador', 'admin@bancobogota.com', '$2b$10$rKZvVvHzf1qE.yKJxR8ZPOxGVGvZ8YdZ5QmXhF8BJ4qNp8YhWXqBq', 'admin')
-ON CONFLICT (correo) DO NOTHING;
-
--- Comentarios
-COMMENT ON TABLE usuarios IS 'Tabla de usuarios del sistema con autenticación';
-COMMENT ON COLUMN usuarios.rol IS 'Roles: admin (administrador total), rrhh (recursos humanos), colaborador (usuario básico)';
-
--- Tabla de colaboradores
+------------------------------------------------------------
+-- TABLA: colaboradores
+------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS colaboradores (
     id SERIAL PRIMARY KEY,
     nombre_completo VARCHAR(255) NOT NULL,
@@ -55,20 +38,24 @@ CREATE TABLE IF NOT EXISTS colaboradores (
     actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de calendario de onboardings técnicos
+------------------------------------------------------------
+-- TABLA: calendario_onboardings
+------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS calendario_onboardings (
     id SERIAL PRIMARY KEY,
     nombre_evento VARCHAR(255) NOT NULL,
     descripcion TEXT,
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
-    tipo VARCHAR(100) NOT NULL, -- 'Journey to Cloud', 'Capítulo 1', etc.
+    tipo VARCHAR(100) NOT NULL,
     activo BOOLEAN DEFAULT TRUE,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de asignaciones (relación colaborador - evento)
+------------------------------------------------------------
+-- TABLA: asignaciones
+------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS asignaciones (
     id SERIAL PRIMARY KEY,
     colaborador_id INTEGER REFERENCES colaboradores(id) ON DELETE CASCADE,
@@ -79,23 +66,62 @@ CREATE TABLE IF NOT EXISTS asignaciones (
     UNIQUE(colaborador_id, evento_id)
 );
 
--- Tabla de notificaciones enviadas (para evitar duplicados)
+------------------------------------------------------------
+-- TABLA: notificaciones_enviadas
+------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS notificaciones_enviadas (
     id SERIAL PRIMARY KEY,
     evento_id INTEGER REFERENCES calendario_onboardings(id) ON DELETE CASCADE,
     colaborador_id INTEGER REFERENCES colaboradores(id) ON DELETE CASCADE,
-    tipo VARCHAR(50) NOT NULL, -- 'alerta_semanal', 'recordatorio', etc.
+    tipo VARCHAR(50) NOT NULL,
     fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(evento_id, colaborador_id, tipo)
 );
 
--- Índices para mejorar el rendimiento
-CREATE INDEX IF NOT EXISTS idx_colaboradores_correo ON colaboradores(correo);
-CREATE INDEX IF NOT EXISTS idx_calendario_fecha_inicio ON calendario_onboardings(fecha_inicio);
-CREATE INDEX IF NOT EXISTS idx_asignaciones_colaborador ON asignaciones(colaborador_id);
-CREATE INDEX IF NOT EXISTS idx_asignaciones_evento ON asignaciones(evento_id);
+------------------------------------------------------------
+-- ⭐ PRIMERO: Crear función actualizar_timestamp()
+------------------------------------------------------------
+CREATE OR REPLACE FUNCTION actualizar_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.actualizado_en = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
--- Insertar datos de ejemplo para calendario (Año 2025)
+------------------------------------------------------------
+-- ⭐ SEGUNDO: Crear triggers
+------------------------------------------------------------
+CREATE TRIGGER trigger_actualizar_usuarios
+BEFORE UPDATE ON usuarios
+FOR EACH ROW
+EXECUTE FUNCTION actualizar_timestamp();
+
+CREATE TRIGGER trigger_actualizar_colaboradores
+BEFORE UPDATE ON colaboradores
+FOR EACH ROW
+EXECUTE FUNCTION actualizar_timestamp();
+
+CREATE TRIGGER trigger_actualizar_calendario
+BEFORE UPDATE ON calendario_onboardings
+FOR EACH ROW
+EXECUTE FUNCTION actualizar_timestamp();
+
+------------------------------------------------------------
+-- INSERTAR USUARIO ADMIN POR DEFECTO
+------------------------------------------------------------
+INSERT INTO usuarios (nombre_completo, correo, password, rol)
+VALUES (
+    'Administrador',
+    'admin@bancobogota.com',
+    '$2b$10$rKZvVvHzf1qE.yKJxR8ZPOxGVGvZ8YdZ5QmXhF8BJ4qNp8YhWXqBq',
+    'admin'
+)
+ON CONFLICT (correo) DO NOTHING;
+
+------------------------------------------------------------
+-- INSERTAR EVENTOS DE ONBOARDING (AÑO 2025)
+------------------------------------------------------------
 INSERT INTO calendario_onboardings (nombre_evento, descripcion, fecha_inicio, fecha_fin, tipo) VALUES
 ('Journey to Cloud - Q1', 'Onboarding técnico Journey to Cloud primer trimestre', '2025-01-15', '2025-01-21', 'Journey to Cloud'),
 ('Journey to Cloud - Q2', 'Onboarding técnico Journey to Cloud segundo trimestre', '2025-04-14', '2025-04-20', 'Journey to Cloud'),
@@ -111,27 +137,9 @@ INSERT INTO calendario_onboardings (nombre_evento, descripcion, fecha_inicio, fe
 ('Capítulo Avanzado - Dic', 'Onboarding técnico capítulo avanzado', '2025-12-08', '2025-12-12', 'Capítulo Técnico')
 ON CONFLICT DO NOTHING;
 
--- Función para actualizar el campo actualizado_en automáticamente
-CREATE OR REPLACE FUNCTION actualizar_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.actualizado_en = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Triggers para actualizar timestamps
-CREATE TRIGGER trigger_actualizar_colaboradores
-BEFORE UPDATE ON colaboradores
-FOR EACH ROW
-EXECUTE FUNCTION actualizar_timestamp();
-
-CREATE TRIGGER trigger_actualizar_calendario
-BEFORE UPDATE ON calendario_onboardings
-FOR EACH ROW
-EXECUTE FUNCTION actualizar_timestamp();
-
--- Vista para obtener información completa de colaboradores con sus asignaciones
+------------------------------------------------------------
+-- VISTA: Vista completa de colaboradores
+------------------------------------------------------------
 CREATE OR REPLACE VIEW vista_colaboradores_completa AS
 SELECT 
     c.id,
@@ -158,7 +166,10 @@ LEFT JOIN asignaciones a ON c.id = a.colaborador_id
 LEFT JOIN calendario_onboardings co ON a.evento_id = co.id
 GROUP BY c.id;
 
-COMMENT ON TABLE colaboradores IS 'Tabla principal de colaboradores del banco';
-COMMENT ON TABLE calendario_onboardings IS 'Calendario anual de eventos de onboarding técnico';
-COMMENT ON TABLE asignaciones IS 'Relación entre colaboradores y eventos de onboarding';
-COMMENT ON TABLE notificaciones_enviadas IS 'Registro de notificaciones por correo enviadas';
+------------------------------------------------------------
+-- COMENTARIOS
+------------------------------------------------------------
+COMMENT ON TABLE colaboradores IS 'Tabla de colaboradores del banco';
+COMMENT ON TABLE calendario_onboardings IS 'Calendario anual de eventos';
+COMMENT ON TABLE asignaciones IS 'Relación colaboradores-eventos';
+COMMENT ON TABLE notificaciones_enviadas IS 'Notificaciones enviadas por correo';
