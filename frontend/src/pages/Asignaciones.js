@@ -10,6 +10,7 @@ const Asignaciones = () => {
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(''); // ✅ NUEVO
   const [formData, setFormData] = useState({
     colaborador_id: '',
     evento_id: ''
@@ -83,11 +84,13 @@ const Asignaciones = () => {
     
     // Validaciones adicionales
     if (!formData.colaborador_id || !formData.evento_id) {
-      alert('Por favor, selecciona un colaborador y un evento');
+      setError('⚠️ Por favor, selecciona un colaborador y un evento');
       return;
     }
 
     try {
+      setError(null); // ✅ Limpiar error anterior
+      setSuccessMessage(''); // ✅ Limpiar mensaje anterior
       console.log('📤 Creando asignación:', formData);
 
       await asignacionesAPI.crear(
@@ -95,14 +98,37 @@ const Asignaciones = () => {
         parseInt(formData.evento_id)
       );
 
-      alert('Asignación creada exitosamente');
+      // ✅ MOSTRAR MENSAJE DE ÉXITO
+      setSuccessMessage('✅ Asignación creada exitosamente');
+      
+      // ✅ LIMPIAR FORMULARIO
       setFormData({ colaborador_id: '', evento_id: '' });
       setMostrarFormulario(false);
-      cargarDatos();
+      
+      // ✅ RECARGAR DATOS
+      await cargarDatos();
+
+      // ✅ OCULTAR MENSAJE DESPUÉS DE 3 SEGUNDOS
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+
     } catch (error) {
       console.error('❌ Error al crear asignación:', error);
-      const mensajeError = error.response?.data?.error || 'Error al crear asignación';
-      alert(mensajeError);
+      
+      // ✅ MEJORAR MANEJO DE ERRORES
+      const mensajeError = error.response?.data?.mensaje || error.response?.data?.error;
+      
+      if (mensajeError && mensajeError.includes('ya existe')) {
+        setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación de colaborador y evento.');
+      } else {
+        setError(`❌ Error al crear la asignación: ${mensajeError || 'Error desconocido'}`);
+      }
+
+      // ✅ OCULTAR ERROR DESPUÉS DE 5 SEGUNDOS
+      setTimeout(() => {
+        setError(null);
+      }, 5000);
     }
   };
 
@@ -112,18 +138,31 @@ const Asignaciones = () => {
     }
 
     try {
+      setError(null);
+      setSuccessMessage('');
+      
       await asignacionesAPI.eliminar(colaboradorId, eventoId);
-      alert('Asignación eliminada exitosamente');
-      cargarDatos();
+      
+      setSuccessMessage('✅ Asignación eliminada exitosamente');
+      await cargarDatos();
+
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
     } catch (error) {
       console.error('❌ Error al eliminar asignación:', error);
-      alert('Error al eliminar la asignación');
+      setError('❌ Error al eliminar la asignación');
+      
+      setTimeout(() => {
+        setError(null);
+      }, 5000);
     }
   };
 
   const handleCancelar = () => {
     setFormData({ colaborador_id: '', evento_id: '' });
     setMostrarFormulario(false);
+    setError(null); // ✅ Limpiar errores al cancelar
   };
 
   if (loading) {
@@ -134,23 +173,6 @@ const Asignaciones = () => {
           <div className="loading-container">
             <div className="spinner"></div>
             <p>Cargando asignaciones...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <Navbar />
-        <div className="page-container">
-          <div className="error-container">
-            <h2>❌ Error</h2>
-            <p>{error}</p>
-            <button onClick={cargarDatos} className="btn btn-primary">
-              Reintentar
-            </button>
           </div>
         </div>
       </>
@@ -178,6 +200,20 @@ const Asignaciones = () => {
           </button>
         </div>
 
+        {/* ✅ MENSAJE DE ÉXITO */}
+        {successMessage && (
+          <div className="alert alert-success">
+            {successMessage}
+          </div>
+        )}
+
+        {/* ✅ MENSAJE DE ERROR */}
+        {error && (
+          <div className="alert alert-danger">
+            {error}
+          </div>
+        )}
+
         {/* Advertencias si no hay datos */}
         {colaboradores.length === 0 && (
           <div className="alert alert-warning">
@@ -197,13 +233,7 @@ const Asignaciones = () => {
             
             {/* Debug info - Remover en producción */}
             {process.env.NODE_ENV === 'development' && (
-              <div style={{
-                background: '#f8f9fa',
-                padding: '10px',
-                borderRadius: '4px',
-                marginBottom: '15px',
-                fontSize: '12px'
-              }}>
+              <div className="debug-box">
                 <strong>Debug:</strong> 
                 Colaboradores: {colaboradores.length} | 
                 Eventos: {eventos.length}
@@ -230,7 +260,7 @@ const Asignaciones = () => {
                     ))}
                   </select>
                   {colaboradores.length === 0 && (
-                    <small style={{color: '#dc3545'}}>
+                    <small className="text-danger">
                       No hay colaboradores disponibles
                     </small>
                   )}
@@ -254,7 +284,7 @@ const Asignaciones = () => {
                     ))}
                   </select>
                   {eventos.length === 0 && (
-                    <small style={{color: '#dc3545'}}>
+                    <small className="text-danger">
                       No hay eventos disponibles
                     </small>
                   )}

@@ -422,4 +422,78 @@
     .page-header h1 {
         font-size: 24px;
     }
+    /* ===== AGREGAR ESTOS ESTILOS AL ARCHIVO Asignaciones.css ===== */
+
+    /* Alert Success (FALTABA) */
+    .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        animation: slideInFromTop 0.3s ease-out;
+    }
+
+    /* Animación para alertas */
+    @keyframes slideInFromTop {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Alert Danger (ya existía pero mejorada) */
+    .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        animation: slideInFromTop 0.3s ease-out;
+    }
+
+    /* Mejorar el debug box */
+    .debug-box {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-size: 12px;
+        font-family: "Courier New", monospace;
+        border: 1px solid #dee2e6;
+    }
+
+    .debug-box strong {
+        color: #003da5;
+        font-weight: 700;
+    }
+
+    /* Texto de error/éxito en form-group */
+    .text-danger {
+        color: #dc3545;
+    }
+
+    .text-success {
+        color: #28a745;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
 }
