@@ -19,7 +19,7 @@ class NotificacionService {
         }
 
         const mailOptions = {
-          from: process.env.EMAIL_FROM,
+          from: 'Banco de Bogotá <onboarding@resend.dev>', // ← CAMBIO AQUÍ
           to: colaborador.colaborador_correo,
           subject: `🔔 Recordatorio: Onboarding Técnico - ${evento.nombre_evento}`,
           html: `
@@ -61,16 +61,14 @@ class NotificacionService {
           `
         };
 
-        // ✅ ENVIAR CON TIMEOUT
         try {
           const info = await Promise.race([
             transporter.sendMail(mailOptions),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout al enviar correo')), 20000) // 20 segundos
+              setTimeout(() => reject(new Error('Timeout al enviar correo')), 20000)
             )
           ]);
           
-          // Registrar la notificación enviada
           await this.registrarNotificacionEnviada(
             evento.id, 
             colaborador.colaborador_id, 
@@ -98,7 +96,7 @@ class NotificacionService {
   static async enviarCorreoBienvenida(colaborador) {
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM,
+        from: 'Banco de Bogotá <onboarding@resend.dev>', // ← CAMBIO AQUÍ
         to: colaborador.correo,
         subject: '🎉 ¡Bienvenido al Banco de Bogotá!',
         html: `
@@ -137,7 +135,6 @@ class NotificacionService {
         `
       };
 
-      // ✅ ENVIAR CON TIMEOUT
       const info = await Promise.race([
         transporter.sendMail(mailOptions),
         new Promise((_, reject) => 
@@ -155,7 +152,6 @@ class NotificacionService {
 
   /**
    * ✅ CORREGIDO: Enviar correo de confirmación cuando se crea una asignación
-   * Ahora con VALIDACIONES para evitar errores de "Cannot read properties of null"
    */
   static async enviarCorreoConfirmacionAsignacion(colaborador, evento) {
     try {
@@ -170,18 +166,20 @@ class NotificacionService {
       }
 
       // ✅ VALIDACIÓN 3: Verificar que el colaborador tiene correo
-      // IMPORTANTE: En la BD la columna se llama "correo", no "email"
-      if (!colaborador.correo) {
-        console.error('❌ Colaborador sin correo:', JSON.stringify(colaborador, null, 2));
-        throw new Error(`❌ Colaborador "${colaborador.nombre_completo || colaborador.id || 'desconocido'}" no tiene correo configurado. Campo correo: ${colaborador.correo}`);
-      }
+      const emailColaborador = colaborador.correo || colaborador.email;
       
-      const emailColaborador = colaborador.correo;
+      if (!emailColaborador) {
+        console.error('❌ Colaborador sin correo:', JSON.stringify(colaborador, null, 2));
+        throw new Error(`❌ Colaborador "${colaborador.nombre_completo || colaborador.id || 'desconocido'}" no tiene correo configurado`);
+      }
 
       // ✅ VALIDACIÓN 4: Verificar que el evento tiene nombre
       if (!evento.nombre_evento) {
         throw new Error(`❌ Evento con ID ${evento.id || 'desconocido'} no tiene nombre`);
       }
+
+      console.log(`📧 Enviando correo de asignación a: ${emailColaborador}`);
+      console.log(`📝 Evento: ${evento.nombre_evento}`);
 
       // ✅ Formatear fechas de forma segura
       const fechaEvento = evento.fecha_inicio 
@@ -201,8 +199,8 @@ class NotificacionService {
         : null;
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM,
-        to: emailColaborador, // ← USAR LA VARIABLE VALIDADA
+        from: 'Banco de Bogotá <onboarding@resend.dev>', // ← CAMBIO AQUÍ (LO MÁS IMPORTANTE)
+        to: emailColaborador,
         subject: `✅ Has sido asignado a: ${evento.nombre_evento}`,
         html: `
           <!DOCTYPE html>
@@ -287,11 +285,8 @@ class NotificacionService {
       return info;
 
     } catch (error) {
-      // ✅ MEJOR MANEJO DE ERRORES
       const emailColaborador = colaborador?.correo || colaborador?.email || 'desconocido';
       console.error(`❌ Error al enviar correo de confirmación a ${emailColaborador}:`, error.message);
-      
-      // Re-lanzar el error con más contexto
       throw new Error(`Error al enviar correo de confirmación: ${error.message}`);
     }
   }
@@ -355,7 +350,7 @@ class NotificacionService {
       }
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM,
+        from: 'Banco de Bogotá <onboarding@resend.dev>', // ← CAMBIO AQUÍ
         to: destinatario,
         subject: '✅ Prueba del Sistema de Notificaciones - Onboarding',
         html: `
@@ -371,7 +366,6 @@ class NotificacionService {
         `
       };
 
-      // ✅ ENVIAR CON TIMEOUT
       const info = await Promise.race([
         transporter.sendMail(mailOptions),
         new Promise((_, reject) => 
