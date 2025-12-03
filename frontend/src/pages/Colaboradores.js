@@ -78,7 +78,6 @@ const Colaboradores = () => {
     setModoEdicion(true);
     setColaboradorEditando(colaborador);
     
-    // La fecha ya viene en formato YYYY-MM-DD desde el backend
     setFormData({
       nombre_completo: colaborador.nombre_completo,
       correo: colaborador.correo,
@@ -142,6 +141,42 @@ const Colaboradores = () => {
     }
   };
 
+  const handleMarcarIncompletoBienvenida = async (id) => {
+    if (!puedeGestionarColaboradores) {
+      alert('No tienes permisos para marcar onboardings como incompletos');
+      return;
+    }
+    
+    if (!window.confirm('¿Estás seguro de marcar este onboarding como incompleto?')) return;
+    
+    try {
+      await colaboradoresAPI.marcarIncompletoBienvenida(id);
+      alert('Onboarding de bienvenida marcado como incompleto');
+      cargarColaboradores();
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al actualizar estado');
+    }
+  };
+
+  const handleMarcarIncompletoTecnico = async (id) => {
+    if (!puedeGestionarColaboradores) {
+      alert('No tienes permisos para marcar onboardings como incompletos');
+      return;
+    }
+    
+    if (!window.confirm('¿Estás seguro de marcar este onboarding como incompleto? Se eliminará también la fecha de completación.')) return;
+    
+    try {
+      await colaboradoresAPI.marcarIncompletoTecnico(id);
+      alert('Onboarding técnico marcado como incompleto');
+      cargarColaboradores();
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al actualizar estado');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       nombre_completo: '',
@@ -165,7 +200,6 @@ const Colaboradores = () => {
   const formatearFecha = (fechaString) => {
     if (!fechaString) return '-';
     
-    // Si ya viene en formato YYYY-MM-DD, solo formatear
     const [año, mes, dia] = fechaString.split('-');
     return `${dia}/${mes}/${año}`;
   };
@@ -339,9 +373,25 @@ const Colaboradores = () => {
                     <td className="td-name">{colaborador.nombre_completo}</td>
                     <td>{colaborador.correo}</td>
                     <td>{formatearFecha(colaborador.fecha_ingreso)}</td>
+                    
+                    {/* ✅ COLUMNA ONBOARDING BIENVENIDA CON BOTÓN INCOMPLETO */}
                     <td>
                       {colaborador.onboarding_bienvenida ? (
-                        <span className="badge badge-success">✓ Completado</span>
+                        puedeGestionarColaboradores ? (
+                          <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span className="badge badge-success">✓ Completado</span>
+                            <button 
+                              onClick={() => handleMarcarIncompletoBienvenida(colaborador.id)}
+                              className="badge badge-secondary clickable"
+                              style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                              title="Marcar como incompleto"
+                            >
+                              Incompleto
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="badge badge-success">✓ Completado</span>
+                        )
                       ) : puedeGestionarColaboradores ? (
                         <button 
                           onClick={() => handleCompletarBienvenida(colaborador.id)}
@@ -353,9 +403,25 @@ const Colaboradores = () => {
                         <span className="badge badge-warning">Pendiente</span>
                       )}
                     </td>
+                    
+                    {/* ✅ COLUMNA ONBOARDING TÉCNICO CON BOTÓN INCOMPLETO */}
                     <td>
                       {colaborador.onboarding_tecnico ? (
-                        <span className="badge badge-success">✓ Completado</span>
+                        puedeGestionarColaboradores ? (
+                          <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span className="badge badge-success">✓ Completado</span>
+                            <button 
+                              onClick={() => handleMarcarIncompletoTecnico(colaborador.id)}
+                              className="badge badge-secondary clickable"
+                              style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                              title="Marcar como incompleto"
+                            >
+                              Incompleto
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="badge badge-success">✓ Completado</span>
+                        )
                       ) : puedeGestionarColaboradores ? (
                         <button 
                           onClick={() => handleCompletarTecnico(colaborador.id)}
@@ -367,7 +433,9 @@ const Colaboradores = () => {
                         <span className="badge badge-warning">Pendiente</span>
                       )}
                     </td>
+                    
                     <td>{formatearFecha(colaborador.fecha_onboarding_tecnico)}</td>
+                    
                     {puedeGestionarColaboradores && (
                       <td className="td-actions">
                         <button

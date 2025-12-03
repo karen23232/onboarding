@@ -157,6 +157,29 @@ class Colaborador {
     const resultado = await pool.query(query, [id, fechaCompletado]);
     return resultado.rows[0];
   }
+  static async marcarIncompletoOnboardingBienvenida(id) {
+  const query = `
+    UPDATE colaboradores 
+    SET onboarding_bienvenida = false, actualizado_en = CURRENT_TIMESTAMP
+    WHERE id = $1
+    RETURNING *
+  `;
+  const resultado = await pool.query(query, [id]);
+  return resultado.rows[0];
+}
+
+static async marcarIncompletoOnboardingTecnico(id) {
+  const query = `
+    UPDATE colaboradores 
+    SET onboarding_tecnico = false, 
+        fecha_onboarding_tecnico = NULL,
+        actualizado_en = CURRENT_TIMESTAMP
+    WHERE id = $1
+    RETURNING *
+  `;
+  const resultado = await pool.query(query, [id]);
+  return resultado.rows[0];
+}
 
   static async filtrarPorEstado(filtros) {
     let query = `

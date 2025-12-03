@@ -194,6 +194,54 @@ class ColaboradorController {
       });
     }
   }
+
+
+  static async marcarIncompletoOnboardingBienvenida(req, res) {
+  try {
+    const { id } = req.params;
+    
+    const colaboradorActualizado = await Colaborador.marcarIncompletoOnboardingBienvenida(id);
+    
+    if (!colaboradorActualizado) {
+      return res.status(404).json({ error: 'Colaborador no encontrado' });
+    }
+    
+    res.status(200).json({
+      mensaje: 'Onboarding de bienvenida marcado como incompleto',
+      colaborador: colaboradorActualizado
+    });
+  } catch (error) {
+    console.error('Error al marcar incompleto onboarding de bienvenida:', error);
+    res.status(500).json({ 
+      error: 'Error al marcar incompleto onboarding de bienvenida',
+      detalle: error.message 
+    });
+  }
 }
+
+static async marcarIncompletoOnboardingTecnico(req, res) {
+  try {
+    const { id } = req.params;
+    
+    const colaboradorActualizado = await Colaborador.marcarIncompletoOnboardingTecnico(id);
+    
+    if (!colaboradorActualizado) {
+      return res.status(404).json({ error: 'Colaborador no encontrado' });
+    }
+    
+    res.status(200).json({
+      mensaje: 'Onboarding técnico marcado como incompleto',
+      colaborador: colaboradorActualizado
+    });
+  } catch (error) {
+    console.error('Error al marcar incompleto onboarding técnico:', error);
+    res.status(500).json({ 
+      error: 'Error al marcar incompleto onboarding técnico',
+      detalle: error.message 
+    });
+  }
+}
+}
+
 
 module.exports = ColaboradorController;

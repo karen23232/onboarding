@@ -72,7 +72,9 @@ export const colaboradoresAPI = {
   eliminar: (id) => api.delete(`/api/colaboradores/${id}`),
   filtrar: (params) => api.get('/api/colaboradores/filtrar', { params }),
   completarBienvenida: (id) => api.patch(`/api/colaboradores/${id}/completar-bienvenida`),
-  completarTecnico: (id, fecha) => api.patch(`/api/colaboradores/${id}/completar-tecnico`, { fecha })
+  completarTecnico: (id, fecha) => api.patch(`/api/colaboradores/${id}/completar-tecnico`, { fecha }),
+  marcarIncompletoBienvenida: (id) => api.patch(`/api/colaboradores/${id}/incompleto-bienvenida`),
+  marcarIncompletoTecnico: (id) => api.patch(`/api/colaboradores/${id}/incompleto-tecnico`),
 };
 
 // Funciones de calendario

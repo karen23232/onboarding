@@ -11,5 +11,7 @@ router.put('/:id', verificarAutenticacion, verificarAdminORRHH, ColaboradorContr
 router.delete('/:id', verificarAutenticacion, verificarAdminORRHH, ColaboradorController.eliminar);
 router.patch('/:id/completar-bienvenida', verificarAutenticacion, verificarAdminORRHH, ColaboradorController.completarOnboardingBienvenida);
 router.patch('/:id/completar-tecnico', verificarAutenticacion, verificarAdminORRHH, ColaboradorController.completarOnboardingTecnico);
+router.patch('/:id/incompleto-bienvenida', verificarAutenticacion, verificarAdminORRHH, ColaboradorController.marcarIncompletoOnboardingBienvenida);
+router.patch('/:id/incompleto-tecnico', verificarAutenticacion, verificarAdminORRHH, ColaboradorController.marcarIncompletoOnboardingTecnico);
 
 module.exports = router;

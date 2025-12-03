@@ -455,4 +455,13 @@ textarea.form-input {
         width: 100%;
         justify-content: center;
     }
+    .badge-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .badge-secondary:hover {
+        background-color: #5a6268;
+        transform: scale(1.05);
+    }
 }
