@@ -206,6 +206,111 @@ class NotificacionService {
       throw error;
     }
   }
+
+  // Agregar esta función ANTES de module.exports
+
+/**
+ * Enviar correo de confirmación cuando se crea una asignación
+ */
+static async enviarCorreoConfirmacionAsignacion(colaborador, evento) {
+  try {
+    const fechaEvento = new Date(evento.fecha_inicio).toLocaleDateString('es-CO', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const fechaFin = new Date(evento.fecha_fin).toLocaleDateString('es-CO', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: colaborador.correo,
+      subject: `✅ Has sido asignado a: ${evento.nombre_evento}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #003da5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+            .event-box { background-color: white; padding: 20px; border-left: 4px solid #003da5; margin: 20px 0; border-radius: 4px; }
+            .event-detail { margin: 10px 0; padding: 8px 0; }
+            .label { font-weight: bold; color: #003da5; }
+            .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+            .button { display: inline-block; padding: 12px 30px; background-color: #003da5; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0;">🎉 Nueva Asignación de Onboarding</h1>
+            </div>
+            <div class="content">
+              <p>Hola <strong>${colaborador.nombre_completo}</strong>,</p>
+              
+              <p>Te informamos que has sido asignado al siguiente evento de onboarding técnico:</p>
+              
+              <div class="event-box">
+                <h2 style="margin-top: 0; color: #003da5;">${evento.nombre_evento}</h2>
+                
+                <div class="event-detail">
+                  <span class="label">📋 Tipo:</span> ${evento.tipo}
+                </div>
+                
+                <div class="event-detail">
+                  <span class="label">📅 Fecha de inicio:</span> ${fechaEvento}
+                </div>
+                
+                <div class="event-detail">
+                  <span class="label">📅 Fecha de fin:</span> ${fechaFin}
+                </div>
+                
+                ${evento.descripcion ? `
+                  <div class="event-detail">
+                    <span class="label">📝 Descripción:</span><br>
+                    ${evento.descripcion}
+                  </div>
+                ` : ''}
+              </div>
+              
+              <p><strong>⏰ Recordatorio:</strong> Recibirás una alerta por correo una semana antes del evento.</p>
+              
+              <p>Si tienes alguna pregunta, no dudes en contactar al equipo de Recursos Humanos.</p>
+              
+              <p style="margin-top: 30px;">
+                Saludos cordiales,<br>
+                <strong>Equipo de Recursos Humanos</strong><br>
+                Banco de Bogotá
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p>Este es un mensaje automático del Sistema de Gestión de Onboarding.</p>
+              <p>© ${new Date().getFullYear()} Banco de Bogotá. Todos los derechos reservados.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Correo de confirmación enviado a ${colaborador.correo}`);
+    return info;
+
+  } catch (error) {
+    console.error('❌ Error al enviar correo de confirmación:', error);
+    throw error;
+  }
+}
+
+  
 }
 
 module.exports = NotificacionService;

@@ -32,8 +32,18 @@ class AsignacionController {
 
       const nuevaAsignacion = await Asignacion.crear(colaborador_id, evento_id);
       
+      // 📧 ENVIAR CORREO DE CONFIRMACIÓN INMEDIATAMENTE
+      try {
+        const NotificacionService = require('../services/notificacionService');
+        await NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento);
+        console.log(`📧 Correo de confirmación enviado a ${colaborador.correo}`);
+      } catch (emailError) {
+        console.error('⚠️ Error al enviar correo (asignación creada exitosamente):', emailError.message);
+        // No fallar la creación si el correo falla
+      }
+      
       res.status(201).json({
-        mensaje: 'Asignación creada exitosamente',
+        mensaje: 'Asignación creada exitosamente y correo enviado',
         asignacion: nuevaAsignacion
       });
     } catch (error) {
@@ -236,8 +246,30 @@ class AsignacionController {
 
       const asignaciones = await Asignacion.asignarMultiples(colaboradores_ids, evento_id);
       
+      // 📧 ENVIAR CORREOS A TODOS LOS COLABORADORES ASIGNADOS
+      try {
+        const NotificacionService = require('../services/notificacionService');
+        let correosEnviados = 0;
+        
+        for (const colaborador_id of colaboradores_ids) {
+          try {
+            const colaborador = await Colaborador.obtenerPorId(colaborador_id);
+            if (colaborador) {
+              await NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento);
+              correosEnviados++;
+            }
+          } catch (emailError) {
+            console.error(`⚠️ Error al enviar correo a colaborador ${colaborador_id}:`, emailError.message);
+          }
+        }
+        
+        console.log(`📧 ${correosEnviados} correos de confirmación enviados`);
+      } catch (emailError) {
+        console.error('⚠️ Error general al enviar correos:', emailError.message);
+      }
+      
       res.status(201).json({
-        mensaje: `${asignaciones.length} asignaciones creadas exitosamente`,
+        mensaje: `${asignaciones.length} asignaciones creadas exitosamente y correos enviados`,
         total: asignaciones.length,
         asignaciones
       });
