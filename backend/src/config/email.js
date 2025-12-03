@@ -9,7 +9,7 @@ console.log('   Password:', process.env.EMAIL_PASSWORD ? '‚úÖ Configurada' : '‚ù
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: parseInt(process.env.EMAIL_PORT),
-  secure: false, // false para puerto 587
+  secure: true, // false para puerto 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
