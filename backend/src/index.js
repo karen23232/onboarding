@@ -20,8 +20,36 @@ const { rutaNoEncontrada, manejadorErrores } = require('./middleware/errorHandle
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// ✅ CONFIGURACIÓN CORS PARA PRODUCCIÓN
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://onboarding-kappa-nine.vercel.app'
+    ];
+    
+    // Permitir requests sin origin (como Postman, o requests del mismo servidor)
+    if (!origin) return callback(null, true);
+    
+    // Permitir cualquier subdominio de vercel.app
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -60,7 +88,8 @@ app.get('/health', async (req, res) => {
     res.status(200).json({ 
       status: 'OK', 
       database: 'Conectado',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
     });
   } catch (error) {
     res.status(500).json({ 
@@ -84,6 +113,7 @@ const server = app.listen(PORT, () => {
   console.log(`📍 Puerto: ${PORT}`);
   console.log(`🌐 URL: http://localhost:${PORT}`);
   console.log(`🏥 Health: http://localhost:${PORT}/health`);
+  console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
   console.log('===========================================');
   console.log('');
 
