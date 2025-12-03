@@ -8,6 +8,7 @@ const Asignaciones = () => {
   const [colaboradores, setColaboradores] = useState([]);
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [creandoAsignacion, setCreandoAsignacion] = useState(false); // ✅ NUEVO: estado separado
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -25,21 +26,12 @@ const Asignaciones = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Iniciando carga de datos...');
-
       const [asigRes, colabRes, eventRes] = await Promise.all([
         asignacionesAPI.obtenerTodas(),
         colaboradoresAPI.obtenerTodos(),
         calendarioAPI.obtenerActivos()
       ]);
 
-      console.log('📦 Respuestas recibidas:', {
-        asignaciones: asigRes.data,
-        colaboradores: colabRes.data,
-        eventos: eventRes.data
-      });
-
-      // Extraer datos de forma segura
       const asignacionesData = Array.isArray(asigRes.data.asignaciones) 
         ? asigRes.data.asignaciones 
         : [];
@@ -52,27 +44,12 @@ const Asignaciones = () => {
         ? eventRes.data.eventos 
         : [];
 
-      console.log('✅ Datos procesados:', {
-        asignaciones: asignacionesData.length,
-        colaboradores: colaboradoresData.length,
-        eventos: eventosData.length
-      });
-
       setAsignaciones(asignacionesData);
       setColaboradores(colaboradoresData);
       setEventos(eventosData);
 
-      // Mostrar advertencias si hay arrays vacíos
-      if (colaboradoresData.length === 0) {
-        console.warn('⚠️ No hay colaboradores en la base de datos');
-      }
-      if (eventosData.length === 0) {
-        console.warn('⚠️ No hay eventos activos en la base de datos');
-      }
-
     } catch (error) {
       console.error('❌ Error al cargar datos:', error);
-      console.error('❌ Detalles del error:', error.response?.data);
       setError('Error al cargar los datos. Por favor, recarga la página.');
     } finally {
       setLoading(false);
@@ -82,7 +59,6 @@ const Asignaciones = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validaciones adicionales
     if (!formData.colaborador_id || !formData.evento_id) {
       setError('⚠️ Por favor, selecciona un colaborador y un evento');
       return;
@@ -91,9 +67,7 @@ const Asignaciones = () => {
     try {
       setError(null);
       setSuccessMessage('');
-      setLoading(true); // ✅ Mostrar loading mientras crea
-      
-      console.log('📤 Creando asignación:', formData);
+      setCreandoAsignacion(true); // ✅ Usar estado separado
 
       await asignacionesAPI.crear(
         parseInt(formData.colaborador_id),
@@ -105,10 +79,10 @@ const Asignaciones = () => {
       setFormData({ colaborador_id: '', evento_id: '' });
       setMostrarFormulario(false);
       
-      // ✅ RECARGAR DATOS
+      // ✅ RECARGAR sin afectar el loading del formulario
       await cargarDatos();
 
-      // ✅ OCULTAR MENSAJE DESPUÉS DE 3 SEGUNDOS
+      // ✅ OCULTAR MENSAJE
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
@@ -119,17 +93,16 @@ const Asignaciones = () => {
       const mensajeError = error.response?.data?.mensaje || error.response?.data?.error;
       
       if (mensajeError && mensajeError.includes('ya existe')) {
-        setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación de colaborador y evento.');
+        setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación.');
       } else {
-        setError(`❌ Error al crear la asignación: ${mensajeError || 'Error desconocido'}`);
+        setError(`❌ Error: ${mensajeError || 'Error desconocido'}`);
       }
 
-      // ✅ OCULTAR ERROR DESPUÉS DE 5 SEGUNDOS
       setTimeout(() => {
         setError(null);
       }, 5000);
     } finally {
-      setLoading(false);
+      setCreandoAsignacion(false); // ✅ Siempre se ejecuta
     }
   };
 
@@ -151,7 +124,7 @@ const Asignaciones = () => {
         setSuccessMessage('');
       }, 3000);
     } catch (error) {
-      console.error('❌ Error al eliminar asignación:', error);
+      console.error('❌ Error al eliminar:', error);
       setError('❌ Error al eliminar la asignación');
       
       setTimeout(() => {
@@ -163,25 +136,22 @@ const Asignaciones = () => {
   const handleCancelar = () => {
     setFormData({ colaborador_id: '', evento_id: '' });
     setMostrarFormulario(false);
-    setError(null); // ✅ Limpiar error
-    setSuccessMessage(''); // ✅ Limpiar éxito
+    setError(null);
+    setSuccessMessage('');
   };
 
-  // ✅ NUEVO: Limpiar mensajes cuando se abre el formulario
   const handleNuevaAsignacion = () => {
     setError(null);
     setSuccessMessage('');
     setMostrarFormulario(!mostrarFormulario);
   };
 
-  // ✅ NUEVO: Limpiar error cuando cambia la selección
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
     
-    // Limpiar error si había uno
     if (error) {
       setError(null);
     }
@@ -213,7 +183,7 @@ const Asignaciones = () => {
             </p>
           </div>
           <button 
-            onClick={handleNuevaAsignacion} // ✅ CAMBIO AQUÍ
+            onClick={handleNuevaAsignacion}
             className="btn btn-primary"
             disabled={colaboradores.length === 0 || eventos.length === 0}
           >
@@ -222,30 +192,27 @@ const Asignaciones = () => {
           </button>
         </div>
 
-        {/* ✅ MENSAJE DE ÉXITO */}
         {successMessage && (
           <div className="alert alert-success">
             {successMessage}
           </div>
         )}
 
-        {/* ✅ MENSAJE DE ERROR */}
         {error && (
           <div className="alert alert-danger">
             {error}
           </div>
         )}
 
-        {/* Advertencias si no hay datos */}
         {colaboradores.length === 0 && (
           <div className="alert alert-warning">
-            ⚠️ No hay colaboradores registrados. Por favor, registra colaboradores primero.
+            ⚠️ No hay colaboradores registrados.
           </div>
         )}
 
         {eventos.length === 0 && (
           <div className="alert alert-warning">
-            ⚠️ No hay eventos activos. Por favor, crea eventos en el calendario primero.
+            ⚠️ No hay eventos activos.
           </div>
         )}
 
@@ -261,9 +228,10 @@ const Asignaciones = () => {
                     id="colaborador_id"
                     name="colaborador_id"
                     value={formData.colaborador_id}
-                    onChange={(e) => handleInputChange('colaborador_id', e.target.value)} // ✅ CAMBIO AQUÍ
+                    onChange={(e) => handleInputChange('colaborador_id', e.target.value)}
                     className="form-input"
                     required
+                    disabled={creandoAsignacion} // ✅ Deshabilitar durante creación
                   >
                     <option value="">Seleccionar...</option>
                     {colaboradores.map(colaborador => (
@@ -272,11 +240,6 @@ const Asignaciones = () => {
                       </option>
                     ))}
                   </select>
-                  {colaboradores.length === 0 && (
-                    <small className="text-danger">
-                      No hay colaboradores disponibles
-                    </small>
-                  )}
                 </div>
 
                 <div className="form-group">
@@ -285,9 +248,10 @@ const Asignaciones = () => {
                     id="evento_id"
                     name="evento_id"
                     value={formData.evento_id}
-                    onChange={(e) => handleInputChange('evento_id', e.target.value)} // ✅ CAMBIO AQUÍ
+                    onChange={(e) => handleInputChange('evento_id', e.target.value)}
                     className="form-input"
                     required
+                    disabled={creandoAsignacion} // ✅ Deshabilitar durante creación
                   >
                     <option value="">Seleccionar...</option>
                     {eventos.map(evento => (
@@ -296,11 +260,6 @@ const Asignaciones = () => {
                       </option>
                     ))}
                   </select>
-                  {eventos.length === 0 && (
-                    <small className="text-danger">
-                      No hay eventos disponibles
-                    </small>
-                  )}
                 </div>
               </div>
 
@@ -309,15 +268,16 @@ const Asignaciones = () => {
                   type="button" 
                   onClick={handleCancelar} 
                   className="btn btn-secondary"
+                  disabled={creandoAsignacion} // ✅ Deshabilitar durante creación
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit" 
                   className="btn btn-primary"
-                  disabled={loading || colaboradores.length === 0 || eventos.length === 0}
+                  disabled={creandoAsignacion || !formData.colaborador_id || !formData.evento_id}
                 >
-                  {loading ? 'Creando...' : 'Crear Asignación'}
+                  {creandoAsignacion ? 'Creando...' : 'Crear Asignación'}
                 </button>
               </div>
             </form>
