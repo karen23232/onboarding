@@ -33,21 +33,14 @@ class AsignacionController {
 
       const nuevaAsignacion = await Asignacion.crear(colaborador_id, evento_id);
       
-      // ✅ OBTENER DATOS COMPLETOS DE LA ASIGNACIÓN RECIÉN CREADA
-      const asignacionCompleta = await Asignacion.obtenerPorColaborador(colaborador_id);
-      const asignacionCreada = asignacionCompleta.find(
-        a => a.colaborador_id === colaborador_id && a.evento_id === evento_id
-      );
-      
-      // ✅ RESPONDER INMEDIATAMENTE CON DATOS COMPLETOS
+      // ✅ RESPONDER INMEDIATAMENTE (sin esperar el correo)
       res.status(201).json({
         mensaje: 'Asignación creada exitosamente',
-        asignacion: asignacionCreada || nuevaAsignacion,
-        correo_programado: false // Deshabilitado temporalmente
+        asignacion: nuevaAsignacion,
+        correo_programado: true
       });
 
-      // 📧 COMENTADO TEMPORALMENTE - Reactivar cuando correos funcionen
-      /*
+      // 📧 ENVIAR CORREO EN SEGUNDO PLANO (SIN AWAIT)
       const NotificacionService = require('../services/notificacionService');
       NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento)
         .then(() => {
@@ -55,8 +48,8 @@ class AsignacionController {
         })
         .catch(emailError => {
           console.error(`❌ Error al enviar correo a ${colaborador.correo}:`, emailError.message);
+          // El error de correo no afecta la asignación ya creada
         });
-      */
 
     } catch (error) {
       console.error('Error al crear asignación:', error);
@@ -258,11 +251,28 @@ class AsignacionController {
 
       const asignaciones = await Asignacion.asignarMultiples(colaboradores_ids, evento_id);
       
+      // ✅ RESPONDER INMEDIATAMENTE
       res.status(201).json({
         mensaje: `${asignaciones.length} asignaciones creadas exitosamente`,
         total: asignaciones.length,
         asignaciones,
-        correos_programados: false // Deshabilitado temporalmente
+        correos_programados: true
+      });
+
+      // 📧 ENVIAR CORREOS EN SEGUNDO PLANO (SIN AWAIT)
+      const NotificacionService = require('../services/notificacionService');
+      
+      // Enviar correos de forma asíncrona a todos
+      colaboradores_ids.forEach(async (colaborador_id) => {
+        try {
+          const colaborador = await Colaborador.obtenerPorId(colaborador_id);
+          if (colaborador) {
+            await NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento);
+            console.log(`✅ Correo enviado a ${colaborador.correo}`);
+          }
+        } catch (emailError) {
+          console.error(`❌ Error al enviar correo a colaborador ${colaborador_id}:`, emailError.message);
+        }
       });
 
     } catch (error) {
