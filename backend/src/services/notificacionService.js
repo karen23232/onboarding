@@ -61,22 +61,33 @@ class NotificacionService {
           `
         };
 
-        // Enviar el correo
-        const info = await transporter.sendMail(mailOptions);
-        
-        // Registrar la notificación enviada
-        await this.registrarNotificacionEnviada(
-          evento.id, 
-          colaborador.colaborador_id, 
-          'alerta_semanal'
-        );
+        // ✅ ENVIAR CON TIMEOUT
+        try {
+          const info = await Promise.race([
+            transporter.sendMail(mailOptions),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout al enviar correo')), 20000) // 20 segundos
+            )
+          ]);
+          
+          // Registrar la notificación enviada
+          await this.registrarNotificacionEnviada(
+            evento.id, 
+            colaborador.colaborador_id, 
+            'alerta_semanal'
+          );
 
-        console.log(`✅ Correo enviado a ${colaborador.colaborador_correo}: ${info.messageId}`);
-        return info;
+          console.log(`✅ Correo enviado a ${colaborador.colaborador_correo}: ${info.messageId}`);
+          return info;
+        } catch (emailError) {
+          console.error(`❌ Error enviando correo a ${colaborador.colaborador_correo}:`, emailError.message);
+          return null;
+        }
       });
 
-      const resultados = await Promise.all(promesas);
-      return resultados.filter(r => r !== null);
+      const resultados = await Promise.allSettled(promesas);
+      const exitosas = resultados.filter(r => r.status === 'fulfilled' && r.value !== null);
+      return exitosas.map(r => r.value);
     } catch (error) {
       console.error('Error al enviar alertas:', error);
       throw error;
@@ -126,11 +137,125 @@ class NotificacionService {
         `
       };
 
-      const info = await transporter.sendMail(mailOptions);
+      // ✅ ENVIAR CON TIMEOUT
+      const info = await Promise.race([
+        transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout al enviar correo')), 20000)
+        )
+      ]);
+
       console.log(`✅ Correo de bienvenida enviado a ${colaborador.correo}: ${info.messageId}`);
       return info;
     } catch (error) {
       console.error('Error al enviar correo de bienvenida:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Enviar correo de confirmación cuando se crea una asignación
+   */
+  static async enviarCorreoConfirmacionAsignacion(colaborador, evento) {
+    try {
+      const fechaEvento = new Date(evento.fecha_inicio).toLocaleDateString('es-CO', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+
+      const fechaFin = new Date(evento.fecha_fin).toLocaleDateString('es-CO', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM,
+        to: colaborador.correo,
+        subject: `✅ Has sido asignado a: ${evento.nombre_evento}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background-color: #003da5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+              .event-box { background-color: white; padding: 20px; border-left: 4px solid #003da5; margin: 20px 0; border-radius: 4px; }
+              .event-detail { margin: 10px 0; padding: 8px 0; }
+              .label { font-weight: bold; color: #003da5; }
+              .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1 style="margin: 0;">🎉 Nueva Asignación de Onboarding</h1>
+              </div>
+              <div class="content">
+                <p>Hola <strong>${colaborador.nombre_completo}</strong>,</p>
+                
+                <p>Te informamos que has sido asignado al siguiente evento de onboarding técnico:</p>
+                
+                <div class="event-box">
+                  <h2 style="margin-top: 0; color: #003da5;">${evento.nombre_evento}</h2>
+                  
+                  <div class="event-detail">
+                    <span class="label">📋 Tipo:</span> ${evento.tipo}
+                  </div>
+                  
+                  <div class="event-detail">
+                    <span class="label">📅 Fecha de inicio:</span> ${fechaEvento}
+                  </div>
+                  
+                  <div class="event-detail">
+                    <span class="label">📅 Fecha de fin:</span> ${fechaFin}
+                  </div>
+                  
+                  ${evento.descripcion ? `
+                    <div class="event-detail">
+                      <span class="label">📝 Descripción:</span><br>
+                      ${evento.descripcion}
+                    </div>
+                  ` : ''}
+                </div>
+                
+                <p><strong>⏰ Recordatorio:</strong> Recibirás una alerta por correo una semana antes del evento.</p>
+                
+                <p>Si tienes alguna pregunta, no dudes en contactar al equipo de Recursos Humanos.</p>
+                
+                <p style="margin-top: 30px;">
+                  Saludos cordiales,<br>
+                  <strong>Equipo de Recursos Humanos</strong><br>
+                  Banco de Bogotá
+                </p>
+              </div>
+              
+              <div class="footer">
+                <p>Este es un mensaje automático del Sistema de Gestión de Onboarding.</p>
+                <p>© ${new Date().getFullYear()} Banco de Bogotá. Todos los derechos reservados.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      };
+
+      // ✅ ENVIAR CON TIMEOUT DE 20 SEGUNDOS
+      const info = await Promise.race([
+        transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout al enviar correo de confirmación')), 20000)
+        )
+      ]);
+
+      console.log(`✅ Correo de confirmación enviado a ${colaborador.correo}: ${info.messageId || 'sin ID'}`);
+      return info;
+
+    } catch (error) {
+      console.error(`❌ Error al enviar correo de confirmación a ${colaborador.correo}:`, error.message);
       throw error;
     }
   }
@@ -191,6 +316,7 @@ class NotificacionService {
             <h2 style="color: #003d82;">✅ Sistema de Notificaciones Activo</h2>
             <p>Este es un correo de prueba del sistema de gestión de onboarding.</p>
             <p>Si recibes este mensaje, significa que el sistema de notificaciones está funcionando correctamente.</p>
+            <p><strong>Fecha de prueba:</strong> ${new Date().toLocaleString('es-CO')}</p>
             <p style="margin-top: 30px;">
               <strong>Equipo de Onboarding - Banco de Bogotá</strong>
             </p>
@@ -198,7 +324,14 @@ class NotificacionService {
         `
       };
 
-      const info = await transporter.sendMail(mailOptions);
+      // ✅ ENVIAR CON TIMEOUT
+      const info = await Promise.race([
+        transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout al enviar correo de prueba')), 20000)
+        )
+      ]);
+
       console.log(`✅ Correo de prueba enviado: ${info.messageId}`);
       return info;
     } catch (error) {
@@ -206,111 +339,6 @@ class NotificacionService {
       throw error;
     }
   }
-
-  // Agregar esta función ANTES de module.exports
-
-/**
- * Enviar correo de confirmación cuando se crea una asignación
- */
-static async enviarCorreoConfirmacionAsignacion(colaborador, evento) {
-  try {
-    const fechaEvento = new Date(evento.fecha_inicio).toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    const fechaFin = new Date(evento.fecha_fin).toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: colaborador.correo,
-      subject: `✅ Has sido asignado a: ${evento.nombre_evento}`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #003da5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-            .event-box { background-color: white; padding: 20px; border-left: 4px solid #003da5; margin: 20px 0; border-radius: 4px; }
-            .event-detail { margin: 10px 0; padding: 8px 0; }
-            .label { font-weight: bold; color: #003da5; }
-            .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
-            .button { display: inline-block; padding: 12px 30px; background-color: #003da5; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="margin: 0;">🎉 Nueva Asignación de Onboarding</h1>
-            </div>
-            <div class="content">
-              <p>Hola <strong>${colaborador.nombre_completo}</strong>,</p>
-              
-              <p>Te informamos que has sido asignado al siguiente evento de onboarding técnico:</p>
-              
-              <div class="event-box">
-                <h2 style="margin-top: 0; color: #003da5;">${evento.nombre_evento}</h2>
-                
-                <div class="event-detail">
-                  <span class="label">📋 Tipo:</span> ${evento.tipo}
-                </div>
-                
-                <div class="event-detail">
-                  <span class="label">📅 Fecha de inicio:</span> ${fechaEvento}
-                </div>
-                
-                <div class="event-detail">
-                  <span class="label">📅 Fecha de fin:</span> ${fechaFin}
-                </div>
-                
-                ${evento.descripcion ? `
-                  <div class="event-detail">
-                    <span class="label">📝 Descripción:</span><br>
-                    ${evento.descripcion}
-                  </div>
-                ` : ''}
-              </div>
-              
-              <p><strong>⏰ Recordatorio:</strong> Recibirás una alerta por correo una semana antes del evento.</p>
-              
-              <p>Si tienes alguna pregunta, no dudes en contactar al equipo de Recursos Humanos.</p>
-              
-              <p style="margin-top: 30px;">
-                Saludos cordiales,<br>
-                <strong>Equipo de Recursos Humanos</strong><br>
-                Banco de Bogotá
-              </p>
-            </div>
-            
-            <div class="footer">
-              <p>Este es un mensaje automático del Sistema de Gestión de Onboarding.</p>
-              <p>© ${new Date().getFullYear()} Banco de Bogotá. Todos los derechos reservados.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Correo de confirmación enviado a ${colaborador.correo}`);
-    return info;
-
-  } catch (error) {
-    console.error('❌ Error al enviar correo de confirmación:', error);
-    throw error;
-  }
-}
-
-  
 }
 
 module.exports = NotificacionService;

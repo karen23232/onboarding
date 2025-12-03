@@ -26,31 +26,36 @@ class AsignacionController {
       const existe = await Asignacion.existe(colaborador_id, evento_id);
       if (existe) {
         return res.status(400).json({ 
+          mensaje: 'Esta asignación ya existe',
           error: 'Esta asignación ya existe' 
         });
       }
 
       const nuevaAsignacion = await Asignacion.crear(colaborador_id, evento_id);
       
-      // 📧 ENVIAR CORREO DE CONFIRMACIÓN INMEDIATAMENTE
-      try {
-        const NotificacionService = require('../services/notificacionService');
-        await NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento);
-        console.log(`📧 Correo de confirmación enviado a ${colaborador.correo}`);
-      } catch (emailError) {
-        console.error('⚠️ Error al enviar correo (asignación creada exitosamente):', emailError.message);
-        // No fallar la creación si el correo falla
-      }
-      
+      // ✅ RESPONDER INMEDIATAMENTE (sin esperar el correo)
       res.status(201).json({
-        mensaje: 'Asignación creada exitosamente y correo enviado',
-        asignacion: nuevaAsignacion
+        mensaje: 'Asignación creada exitosamente',
+        asignacion: nuevaAsignacion,
+        correo_programado: true
       });
+
+      // 📧 ENVIAR CORREO EN SEGUNDO PLANO (SIN AWAIT)
+      const NotificacionService = require('../services/notificacionService');
+      NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento)
+        .then(() => {
+          console.log(`✅ Correo de confirmación enviado a ${colaborador.correo}`);
+        })
+        .catch(emailError => {
+          console.error(`❌ Error al enviar correo a ${colaborador.correo}:`, emailError.message);
+          // El error de correo no afecta la asignación ya creada
+        });
+
     } catch (error) {
       console.error('Error al crear asignación:', error);
       res.status(500).json({ 
         error: 'Error al crear asignación',
-        detalle: error.message 
+        mensaje: error.message 
       });
     }
   }
@@ -246,33 +251,30 @@ class AsignacionController {
 
       const asignaciones = await Asignacion.asignarMultiples(colaboradores_ids, evento_id);
       
-      // 📧 ENVIAR CORREOS A TODOS LOS COLABORADORES ASIGNADOS
-      try {
-        const NotificacionService = require('../services/notificacionService');
-        let correosEnviados = 0;
-        
-        for (const colaborador_id of colaboradores_ids) {
-          try {
-            const colaborador = await Colaborador.obtenerPorId(colaborador_id);
-            if (colaborador) {
-              await NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento);
-              correosEnviados++;
-            }
-          } catch (emailError) {
-            console.error(`⚠️ Error al enviar correo a colaborador ${colaborador_id}:`, emailError.message);
-          }
-        }
-        
-        console.log(`📧 ${correosEnviados} correos de confirmación enviados`);
-      } catch (emailError) {
-        console.error('⚠️ Error general al enviar correos:', emailError.message);
-      }
-      
+      // ✅ RESPONDER INMEDIATAMENTE
       res.status(201).json({
-        mensaje: `${asignaciones.length} asignaciones creadas exitosamente y correos enviados`,
+        mensaje: `${asignaciones.length} asignaciones creadas exitosamente`,
         total: asignaciones.length,
-        asignaciones
+        asignaciones,
+        correos_programados: true
       });
+
+      // 📧 ENVIAR CORREOS EN SEGUNDO PLANO (SIN AWAIT)
+      const NotificacionService = require('../services/notificacionService');
+      
+      // Enviar correos de forma asíncrona a todos
+      colaboradores_ids.forEach(async (colaborador_id) => {
+        try {
+          const colaborador = await Colaborador.obtenerPorId(colaborador_id);
+          if (colaborador) {
+            await NotificacionService.enviarCorreoConfirmacionAsignacion(colaborador, evento);
+            console.log(`✅ Correo enviado a ${colaborador.correo}`);
+          }
+        } catch (emailError) {
+          console.error(`❌ Error al enviar correo a colaborador ${colaborador_id}:`, emailError.message);
+        }
+      });
+
     } catch (error) {
       console.error('Error al crear asignaciones múltiples:', error);
       res.status(500).json({ 

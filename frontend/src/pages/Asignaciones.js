@@ -64,18 +64,22 @@ const Asignaciones = () => {
       return;
     }
 
+    // Verificar si la asignación ya existe ANTES de enviar
+    const yaExiste = asignaciones.some(
+      asig => asig.colaborador_id === parseInt(formData.colaborador_id) && 
+              asig.evento_id === parseInt(formData.evento_id)
+    );
+
+    if (yaExiste) {
+      setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación.');
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+
     try {
       setError(null);
       setSuccessMessage('');
       setCreandoAsignacion(true);
-
-      // ✅ CREAR LA ASIGNACIÓN
-      const response = await asignacionesAPI.crear(
-        parseInt(formData.colaborador_id),
-        parseInt(formData.evento_id)
-      );
-
-      console.log('✅ Asignación creada:', response.data);
 
       // ✅ OBTENER DATOS DEL COLABORADOR Y EVENTO SELECCIONADOS
       const colaboradorSeleccionado = colaboradores.find(
@@ -86,45 +90,77 @@ const Asignaciones = () => {
         e => e.id === parseInt(formData.evento_id)
       );
 
-      // ✅ CREAR OBJETO DE NUEVA ASIGNACIÓN PARA LA TABLA
-      const nuevaAsignacion = {
+      // ✅ CREAR OBJETO DE NUEVA ASIGNACIÓN TEMPORAL (OPTIMISTIC UPDATE)
+      const nuevaAsignacionTemp = {
         colaborador_id: parseInt(formData.colaborador_id),
         evento_id: parseInt(formData.evento_id),
         nombre_completo: colaboradorSeleccionado?.nombre_completo || 'Colaborador',
         nombre_evento: eventoSeleccionado?.nombre_evento || 'Evento',
         tipo: eventoSeleccionado?.tipo || 'Sin tipo',
         fecha_inicio: eventoSeleccionado?.fecha_inicio || new Date(),
-        completado: false
+        completado: false,
+        _temporal: true // Marcador temporal
       };
 
-      // ✅ AGREGAR A LA TABLA INMEDIATAMENTE (SIN ESPERAR BACKEND)
-      setAsignaciones(prev => [...prev, nuevaAsignacion]);
+      // ✅ AGREGAR A LA TABLA INMEDIATAMENTE (ACTUALIZACIÓN OPTIMISTA)
+      setAsignaciones(prev => [...prev, nuevaAsignacionTemp]);
 
-      // ✅ MENSAJE DE ÉXITO
-      setSuccessMessage('✅ Asignación creada exitosamente');
-      
-      // ✅ LIMPIAR FORMULARIO Y CERRAR
+      // ✅ LIMPIAR FORMULARIO Y CERRAR INMEDIATAMENTE
       setFormData({ colaborador_id: '', evento_id: '' });
       setMostrarFormulario(false);
 
-      // ✅ OCULTAR MENSAJE DESPUÉS DE 3 SEGUNDOS
+      // ✅ MOSTRAR MENSAJE DE "CREANDO..."
+      setSuccessMessage('⏳ Creando asignación y enviando notificación...');
+
+      // ✅ CREAR LA ASIGNACIÓN EN EL BACKEND
+      const response = await asignacionesAPI.crear(
+        parseInt(formData.colaborador_id),
+        parseInt(formData.evento_id)
+      );
+
+      console.log('✅ Asignación creada en backend:', response.data);
+
+      // ✅ ACTUALIZAR LA ASIGNACIÓN TEMPORAL CON DATOS REALES
+      setAsignaciones(prev => 
+        prev.map(asig => 
+          asig._temporal && 
+          asig.colaborador_id === nuevaAsignacionTemp.colaborador_id &&
+          asig.evento_id === nuevaAsignacionTemp.evento_id
+            ? { ...response.data.asignacion || nuevaAsignacionTemp, _temporal: false }
+            : asig
+        )
+      );
+
+      // ✅ MENSAJE DE ÉXITO
+      if (response.data.correo_enviado) {
+        setSuccessMessage('✅ Asignación creada y correo enviado exitosamente');
+      } else {
+        setSuccessMessage('✅ Asignación creada exitosamente (correo pendiente de envío)');
+      }
+
+      // ✅ OCULTAR MENSAJE DESPUÉS DE 4 SEGUNDOS
       setTimeout(() => {
         setSuccessMessage('');
-      }, 3000);
-
-      // ✅ RECARGAR EN BACKGROUND (OPCIONAL - para sincronizar)
-      // Esto se hace silenciosamente sin bloquear la UI
-      cargarDatos().catch(err => {
-        console.warn('⚠️ Error al sincronizar:', err);
-      });
+      }, 4000);
 
     } catch (error) {
       console.error('❌ Error al crear asignación:', error);
+      
+      // ✅ REVERTIR LA ACTUALIZACIÓN OPTIMISTA SI FALLA
+      setAsignaciones(prev => 
+        prev.filter(asig => !asig._temporal)
+      );
       
       const mensajeError = error.response?.data?.mensaje || error.response?.data?.error;
       
       if (mensajeError && mensajeError.includes('ya existe')) {
         setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación.');
+      } else if (error.response?.status === 504 || error.code === 'ECONNABORTED') {
+        // Timeout - la asignación puede haberse creado
+        setError('⚠️ La operación tomó más tiempo del esperado. Recargando datos...');
+        setTimeout(() => {
+          cargarDatos();
+        }, 2000);
       } else {
         setError(`❌ Error: ${mensajeError || 'No se pudo crear la asignación'}`);
       }
@@ -142,26 +178,35 @@ const Asignaciones = () => {
       return;
     }
 
+    // Guardar copia para poder revertir si falla
+    const asignacionesBackup = [...asignaciones];
+
     try {
       setError(null);
       setSuccessMessage('');
       
-      await asignacionesAPI.eliminar(colaboradorId, eventoId);
-      
-      // ✅ ELIMINAR DE LA TABLA INMEDIATAMENTE
+      // ✅ ELIMINAR DE LA TABLA INMEDIATAMENTE (OPTIMISTIC UPDATE)
       setAsignaciones(prev => 
         prev.filter(asig => 
           !(asig.colaborador_id === colaboradorId && asig.evento_id === eventoId)
         )
       );
       
+      // ✅ LLAMAR AL BACKEND
+      await asignacionesAPI.eliminar(colaboradorId, eventoId);
+      
       setSuccessMessage('✅ Asignación eliminada exitosamente');
 
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
+
     } catch (error) {
       console.error('❌ Error al eliminar:', error);
+      
+      // ✅ REVERTIR SI FALLA
+      setAsignaciones(asignacionesBackup);
+      
       setError('❌ Error al eliminar la asignación');
       
       setTimeout(() => {
@@ -336,7 +381,10 @@ const Asignaciones = () => {
               </thead>
               <tbody>
                 {asignaciones.map((asig, idx) => (
-                  <tr key={`${asig.colaborador_id}-${asig.evento_id}-${idx}`}>
+                  <tr 
+                    key={`${asig.colaborador_id}-${asig.evento_id}-${idx}`}
+                    className={asig._temporal ? 'row-temporal' : ''}
+                  >
                     <td className="td-name">{asig.nombre_completo}</td>
                     <td>{asig.nombre_evento}</td>
                     <td><span className="badge badge-info">{asig.tipo}</span></td>
@@ -353,6 +401,7 @@ const Asignaciones = () => {
                         onClick={() => handleEliminar(asig.colaborador_id, asig.evento_id)}
                         className="btn-icon btn-delete"
                         title="Eliminar asignación"
+                        disabled={asig._temporal}
                       >
                         🗑️
                       </button>
