@@ -374,61 +374,53 @@ const Colaboradores = () => {
                     <td>{colaborador.correo}</td>
                     <td>{formatearFecha(colaborador.fecha_ingreso)}</td>
                     
-                    {/* ✅ COLUMNA ONBOARDING BIENVENIDA CON BOTÓN INCOMPLETO */}
+                    {/* ✅ COLUMNA ONBOARDING BIENVENIDA */}
                     <td>
-                      {colaborador.onboarding_bienvenida ? (
-                        puedeGestionarColaboradores ? (
-                          <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <span className="badge badge-success">✓ Completado</span>
-                            <button 
-                              onClick={() => handleMarcarIncompletoBienvenida(colaborador.id)}
-                              className="badge badge-secondary clickable"
-                              style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                              title="Marcar como incompleto"
-                            >
-                              Incompleto
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="badge badge-success">✓ Completado</span>
-                        )
+                      {colaborador.onboarding_bienvenida === true ? (
+                        <span className="badge badge-success">✓ COMPLETADO</span>
+                      ) : colaborador.onboarding_bienvenida === false ? (
+                        <span className="badge badge-danger">✗ INCOMPLETO</span>
                       ) : puedeGestionarColaboradores ? (
-                        <button 
-                          onClick={() => handleCompletarBienvenida(colaborador.id)}
-                          className="badge badge-warning clickable"
-                        >
-                          Marcar Completado
-                        </button>
+                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button 
+                            onClick={() => handleCompletarBienvenida(colaborador.id)}
+                            className="badge badge-warning clickable"
+                          >
+                            MARCAR COMPLETADO
+                          </button>
+                          <button 
+                            onClick={() => handleMarcarIncompletoBienvenida(colaborador.id)}
+                            className="badge badge-secondary clickable"
+                          >
+                            INCOMPLETO
+                          </button>
+                        </div>
                       ) : (
                         <span className="badge badge-warning">Pendiente</span>
                       )}
                     </td>
                     
-                    {/* ✅ COLUMNA ONBOARDING TÉCNICO CON BOTÓN INCOMPLETO */}
+                    {/* ✅ COLUMNA ONBOARDING TÉCNICO */}
                     <td>
-                      {colaborador.onboarding_tecnico ? (
-                        puedeGestionarColaboradores ? (
-                          <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <span className="badge badge-success">✓ Completado</span>
-                            <button 
-                              onClick={() => handleMarcarIncompletoTecnico(colaborador.id)}
-                              className="badge badge-secondary clickable"
-                              style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                              title="Marcar como incompleto"
-                            >
-                              Incompleto
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="badge badge-success">✓ Completado</span>
-                        )
+                      {colaborador.onboarding_tecnico === true ? (
+                        <span className="badge badge-success">✓ COMPLETADO</span>
+                      ) : colaborador.onboarding_tecnico === false ? (
+                        <span className="badge badge-danger">✗ INCOMPLETO</span>
                       ) : puedeGestionarColaboradores ? (
-                        <button 
-                          onClick={() => handleCompletarTecnico(colaborador.id)}
-                          className="badge badge-warning clickable"
-                        >
-                          Marcar Completado
-                        </button>
+                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button 
+                            onClick={() => handleCompletarTecnico(colaborador.id)}
+                            className="badge badge-warning clickable"
+                          >
+                            MARCAR COMPLETADO
+                          </button>
+                          <button 
+                            onClick={() => handleMarcarIncompletoTecnico(colaborador.id)}
+                            className="badge badge-secondary clickable"
+                          >
+                            INCOMPLETO
+                          </button>
+                        </div>
                       ) : (
                         <span className="badge badge-warning">Pendiente</span>
                       )}
