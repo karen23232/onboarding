@@ -1,383 +1,283 @@
-import React, { useState, useEffect } from 'react';
-import { asignacionesAPI, colaboradoresAPI, calendarioAPI } from '../services/api';
-import Navbar from '../components/Navbar';
-import '../styles/Asignaciones.css';
+const pool = require('../config/database');
 
-const Asignaciones = () => {
-  const [asignaciones, setAsignaciones] = useState([]);
-  const [colaboradores, setColaboradores] = useState([]);
-  const [eventos, setEventos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [creandoAsignacion, setCreandoAsignacion] = useState(false);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [formData, setFormData] = useState({
-    colaborador_id: '',
-    evento_id: ''
-  });
-
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = async () => {
+class Asignacion {
+  // ✅ QUERY CORRECTO - Incluye todas las fechas del evento
+  static async obtenerTodas() {
     try {
-      setLoading(true);
-      setError(null);
-
-      const [asigRes, colabRes, eventRes] = await Promise.all([
-        asignacionesAPI.obtenerTodas(),
-        colaboradoresAPI.obtenerTodos(),
-        calendarioAPI.obtenerActivos()
-      ]);
-
-      const asignacionesData = Array.isArray(asigRes.data.asignaciones) 
-        ? asigRes.data.asignaciones 
-        : [];
+      const query = `
+        SELECT 
+          a.colaborador_id,
+          a.evento_id,
+          a.completado,
+          a.fecha_asignacion,
+          c.nombre_completo,
+          c.correo,
+          co.nombre_evento,
+          co.tipo,
+          co.descripcion,
+          co.fecha_inicio,
+          co.fecha_fin,
+          co.activo
+        FROM asignaciones a
+        INNER JOIN colaboradores c ON a.colaborador_id = c.id
+        INNER JOIN calendario_onboardings co ON a.evento_id = co.id
+        ORDER BY co.fecha_inicio DESC, c.nombre_completo ASC
+      `;
       
-      const colaboradoresData = Array.isArray(colabRes.data.colaboradores) 
-        ? colabRes.data.colaboradores 
-        : [];
-      
-      const eventosData = Array.isArray(eventRes.data.eventos) 
-        ? eventRes.data.eventos 
-        : [];
-
-      console.log('📊 Datos cargados:', {
-        asignaciones: asignacionesData.length,
-        colaboradores: colaboradoresData.length,
-        eventos: eventosData.length
-      });
-
-      setAsignaciones(asignacionesData);
-      setColaboradores(colaboradoresData);
-      setEventos(eventosData);
-
+      const resultado = await pool.query(query);
+      return resultado.rows;
     } catch (error) {
-      console.error('❌ Error al cargar datos:', error);
-      setError('Error al cargar los datos.');
-    } finally {
-      setLoading(false);
+      console.error('Error al obtener todas las asignaciones:', error);
+      throw error;
     }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.colaborador_id || !formData.evento_id) {
-      setError('⚠️ Por favor, selecciona un colaborador y un evento');
-      return;
-    }
-
-    // Verificar duplicados en el frontend
-    const yaExiste = asignaciones.some(
-      asig => asig.colaborador_id === parseInt(formData.colaborador_id) && 
-              asig.evento_id === parseInt(formData.evento_id)
-    );
-
-    if (yaExiste) {
-      setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación.');
-      setTimeout(() => setError(null), 5000);
-      return;
-    }
-
-    try {
-      setError(null);
-      setSuccessMessage('');
-      setCreandoAsignacion(true);
-
-      console.log('📤 Creando asignación:', {
-        colaborador_id: formData.colaborador_id,
-        evento_id: formData.evento_id
-      });
-
-      // ✅ CREAR LA ASIGNACIÓN
-      const response = await asignacionesAPI.crear(
-        parseInt(formData.colaborador_id),
-        parseInt(formData.evento_id)
-      );
-
-      console.log('✅ Respuesta del servidor:', response.data);
-
-      // ✅ LIMPIAR FORMULARIO Y CERRAR INMEDIATAMENTE
-      setFormData({ colaborador_id: '', evento_id: '' });
-      setMostrarFormulario(false);
-
-      // ✅ RECARGAR TODAS LAS ASIGNACIONES PARA ASEGURAR DATOS COMPLETOS
-      const asigRes = await asignacionesAPI.obtenerTodas();
-      const asignacionesActualizadas = asigRes.data.asignaciones || [];
-      
-      console.log('🔄 Asignaciones actualizadas:', asignacionesActualizadas.length);
-      
-      setAsignaciones(asignacionesActualizadas);
-
-      // ✅ MENSAJE DE ÉXITO
-      setSuccessMessage('✅ Asignación creada exitosamente (correo pendiente de envío)');
-
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 4000);
-
-    } catch (error) {
-      console.error('❌ Error al crear asignación:', error);
-      
-      const mensajeError = error.response?.data?.mensaje || error.response?.data?.error;
-      
-      if (mensajeError && mensajeError.includes('ya existe')) {
-        setError('⚠️ Esta asignación ya existe. Por favor, selecciona otra combinación.');
-      } else {
-        setError(`❌ Error: ${mensajeError || 'No se pudo crear la asignación'}`);
-      }
-
-      setTimeout(() => {
-        setError(null);
-      }, 5000);
-    } finally {
-      setCreandoAsignacion(false);
-    }
-  };
-
-  const handleEliminar = async (colaboradorId, eventoId) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta asignación?')) {
-      return;
-    }
-
-    try {
-      setError(null);
-      setSuccessMessage('');
-      
-      await asignacionesAPI.eliminar(colaboradorId, eventoId);
-      
-      // ✅ ELIMINAR DE LA TABLA INMEDIATAMENTE
-      setAsignaciones(prev => 
-        prev.filter(asig => 
-          !(asig.colaborador_id === colaboradorId && asig.evento_id === eventoId)
-        )
-      );
-      
-      setSuccessMessage('✅ Asignación eliminada exitosamente');
-
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-    } catch (error) {
-      console.error('❌ Error al eliminar:', error);
-      setError('❌ Error al eliminar la asignación');
-      
-      setTimeout(() => {
-        setError(null);
-      }, 5000);
-    }
-  };
-
-  const handleCancelar = () => {
-    setFormData({ colaborador_id: '', evento_id: '' });
-    setMostrarFormulario(false);
-    setError(null);
-    setSuccessMessage('');
-  };
-
-  const handleNuevaAsignacion = () => {
-    setError(null);
-    setSuccessMessage('');
-    setMostrarFormulario(!mostrarFormulario);
-  };
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    if (error) {
-      setError(null);
-    }
-  };
-
-  if (loading && asignaciones.length === 0) {
-    return (
-      <>
-        <Navbar />
-        <div className="page-container">
-          <div className="loading-container">
-            <div className="spinner"></div>
-            <p>Cargando asignaciones...</p>
-          </div>
-        </div>
-      </>
-    );
   }
 
-  return (
-    <>
-      <Navbar />
-      <div className="page-container">
-        <div className="page-header">
-          <div>
-            <h1>Gestión de Asignaciones</h1>
-            <p className="page-subtitle">
-              Asigna colaboradores a eventos de onboarding
-            </p>
-          </div>
-          <button 
-            onClick={handleNuevaAsignacion}
-            className="btn btn-primary"
-            disabled={colaboradores.length === 0 || eventos.length === 0}
-          >
-            <span>➕</span>
-            Nueva Asignación
-          </button>
-        </div>
+  static async obtenerPorColaborador(colaborador_id) {
+    try {
+      const query = `
+        SELECT 
+          a.colaborador_id,
+          a.evento_id,
+          a.completado,
+          a.fecha_asignacion,
+          c.nombre_completo,
+          c.correo,
+          co.nombre_evento,
+          co.tipo,
+          co.descripcion,
+          co.fecha_inicio,
+          co.fecha_fin,
+          co.activo
+        FROM asignaciones a
+        INNER JOIN colaboradores c ON a.colaborador_id = c.id
+        INNER JOIN calendario_onboardings co ON a.evento_id = co.id
+        WHERE a.colaborador_id = $1
+        ORDER BY co.fecha_inicio DESC
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id]);
+      return resultado.rows;
+    } catch (error) {
+      console.error('Error al obtener asignaciones por colaborador:', error);
+      throw error;
+    }
+  }
 
-        {successMessage && (
-          <div className="alert alert-success">
-            {successMessage}
-          </div>
-        )}
+  static async obtenerPorEvento(evento_id) {
+    try {
+      const query = `
+        SELECT 
+          a.colaborador_id,
+          a.evento_id,
+          a.completado,
+          a.fecha_asignacion,
+          c.nombre_completo,
+          c.correo,
+          co.nombre_evento,
+          co.tipo,
+          co.descripcion,
+          co.fecha_inicio,
+          co.fecha_fin
+        FROM asignaciones a
+        INNER JOIN colaboradores c ON a.colaborador_id = c.id
+        INNER JOIN calendario_onboardings co ON a.evento_id = co.id
+        WHERE a.evento_id = $1
+        ORDER BY c.nombre_completo ASC
+      `;
+      
+      const resultado = await pool.query(query, [evento_id]);
+      return resultado.rows;
+    } catch (error) {
+      console.error('Error al obtener asignaciones por evento:', error);
+      throw error;
+    }
+  }
 
-        {error && (
-          <div className="alert alert-danger">
-            {error}
-          </div>
-        )}
+  static async obtenerPendientes(colaborador_id) {
+    try {
+      const query = `
+        SELECT 
+          a.colaborador_id,
+          a.evento_id,
+          a.completado,
+          a.fecha_asignacion,
+          c.nombre_completo,
+          c.correo,
+          co.nombre_evento,
+          co.tipo,
+          co.descripcion,
+          co.fecha_inicio,
+          co.fecha_fin
+        FROM asignaciones a
+        INNER JOIN colaboradores c ON a.colaborador_id = c.id
+        INNER JOIN calendario_onboardings co ON a.evento_id = co.id
+        WHERE a.colaborador_id = $1 AND a.completado = false
+        ORDER BY co.fecha_inicio ASC
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id]);
+      return resultado.rows;
+    } catch (error) {
+      console.error('Error al obtener asignaciones pendientes:', error);
+      throw error;
+    }
+  }
 
-        {colaboradores.length === 0 && (
-          <div className="alert alert-warning">
-            ⚠️ No hay colaboradores registrados.
-          </div>
-        )}
+  static async obtenerCompletadas(colaborador_id) {
+    try {
+      const query = `
+        SELECT 
+          a.colaborador_id,
+          a.evento_id,
+          a.completado,
+          a.fecha_asignacion,
+          c.nombre_completo,
+          c.correo,
+          co.nombre_evento,
+          co.tipo,
+          co.descripcion,
+          co.fecha_inicio,
+          co.fecha_fin
+        FROM asignaciones a
+        INNER JOIN colaboradores c ON a.colaborador_id = c.id
+        INNER JOIN calendario_onboardings co ON a.evento_id = co.id
+        WHERE a.colaborador_id = $1 AND a.completado = true
+        ORDER BY co.fecha_inicio DESC
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id]);
+      return resultado.rows;
+    } catch (error) {
+      console.error('Error al obtener asignaciones completadas:', error);
+      throw error;
+    }
+  }
 
-        {eventos.length === 0 && (
-          <div className="alert alert-warning">
-            ⚠️ No hay eventos activos.
-          </div>
-        )}
+  static async crear(colaborador_id, evento_id) {
+    try {
+      const query = `
+        INSERT INTO asignaciones (colaborador_id, evento_id, completado)
+        VALUES ($1, $2, false)
+        RETURNING *
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id, evento_id]);
+      return resultado.rows[0];
+    } catch (error) {
+      console.error('Error al crear asignación:', error);
+      throw error;
+    }
+  }
 
-        {mostrarFormulario && (
-          <div className="form-card">
-            <h3>Nueva Asignación</h3>
+  static async existe(colaborador_id, evento_id) {
+    try {
+      const query = `
+        SELECT EXISTS(
+          SELECT 1 FROM asignaciones 
+          WHERE colaborador_id = $1 AND evento_id = $2
+        ) as existe
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id, evento_id]);
+      return resultado.rows[0].existe;
+    } catch (error) {
+      console.error('Error al verificar existencia de asignación:', error);
+      throw error;
+    }
+  }
 
-            <form onSubmit={handleSubmit} className="assignment-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="colaborador_id">Colaborador *</label>
-                  <select
-                    id="colaborador_id"
-                    name="colaborador_id"
-                    value={formData.colaborador_id}
-                    onChange={(e) => handleInputChange('colaborador_id', e.target.value)}
-                    className="form-input"
-                    required
-                    disabled={creandoAsignacion}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {colaboradores.map(colaborador => (
-                      <option key={colaborador.id} value={colaborador.id}>
-                        {colaborador.nombre_completo}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+  static async marcarCompletada(colaborador_id, evento_id) {
+    try {
+      const query = `
+        UPDATE asignaciones 
+        SET completado = true 
+        WHERE colaborador_id = $1 AND evento_id = $2
+        RETURNING *
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id, evento_id]);
+      return resultado.rows[0];
+    } catch (error) {
+      console.error('Error al marcar asignación como completada:', error);
+      throw error;
+    }
+  }
 
-                <div className="form-group">
-                  <label htmlFor="evento_id">Evento *</label>
-                  <select
-                    id="evento_id"
-                    name="evento_id"
-                    value={formData.evento_id}
-                    onChange={(e) => handleInputChange('evento_id', e.target.value)}
-                    className="form-input"
-                    required
-                    disabled={creandoAsignacion}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {eventos.map(evento => (
-                      <option key={evento.id} value={evento.id}>
-                        {evento.nombre_evento} - {new Date(evento.fecha_inicio).toLocaleDateString('es-CO')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+  static async marcarNoCompletada(colaborador_id, evento_id) {
+    try {
+      const query = `
+        UPDATE asignaciones 
+        SET completado = false 
+        WHERE colaborador_id = $1 AND evento_id = $2
+        RETURNING *
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id, evento_id]);
+      return resultado.rows[0];
+    } catch (error) {
+      console.error('Error al marcar asignación como no completada:', error);
+      throw error;
+    }
+  }
 
-              <div className="form-actions">
-                <button 
-                  type="button" 
-                  onClick={handleCancelar} 
-                  className="btn btn-secondary"
-                  disabled={creandoAsignacion}
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={creandoAsignacion || !formData.colaborador_id || !formData.evento_id}
-                >
-                  {creandoAsignacion ? 'Creando...' : 'Crear Asignación'}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+  static async eliminar(colaborador_id, evento_id) {
+    try {
+      const query = `
+        DELETE FROM asignaciones 
+        WHERE colaborador_id = $1 AND evento_id = $2
+        RETURNING *
+      `;
+      
+      const resultado = await pool.query(query, [colaborador_id, evento_id]);
+      return resultado.rows[0];
+    } catch (error) {
+      console.error('Error al eliminar asignación:', error);
+      throw error;
+    }
+  }
 
-        {asignaciones.length > 0 ? (
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Colaborador</th>
-                  <th>Evento</th>
-                  <th>Tipo</th>
-                  <th>Fecha Evento</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {asignaciones.map((asig, idx) => (
-                  <tr key={`${asig.colaborador_id}-${asig.evento_id}-${idx}`}>
-                    <td className="td-name">{asig.nombre_completo}</td>
-                    <td>{asig.nombre_evento}</td>
-                    <td><span className="badge badge-info">{asig.tipo}</span></td>
-                    <td>
-                      {asig.fecha_inicio && !isNaN(new Date(asig.fecha_inicio)) 
-                        ? new Date(asig.fecha_inicio).toLocaleDateString('es-CO')
-                        : 'Invalid Date'
-                      }
-                    </td>
-                    <td>
-                      {asig.completado ? (
-                        <span className="badge badge-success">✓ Completado</span>
-                      ) : (
-                        <span className="badge badge-warning">Pendiente</span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleEliminar(asig.colaborador_id, asig.evento_id)}
-                        className="btn-icon btn-delete"
-                        title="Eliminar asignación"
-                      >
-                        🗑️
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="empty-state">
-            <div className="empty-icon">🔗</div>
-            <h3>No hay asignaciones</h3>
-            <p>Comienza creando tu primera asignación</p>
-          </div>
-        )}
-      </div>
-    </>
-  );
-};
+  static async asignarMultiples(colaboradores_ids, evento_id) {
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      const asignaciones = [];
+      
+      for (const colaborador_id of colaboradores_ids) {
+        // Verificar si ya existe
+        const existeQuery = `
+          SELECT EXISTS(
+            SELECT 1 FROM asignaciones 
+            WHERE colaborador_id = $1 AND evento_id = $2
+          ) as existe
+        `;
+        
+        const existeResult = await client.query(existeQuery, [colaborador_id, evento_id]);
+        
+        if (!existeResult.rows[0].existe) {
+          const insertQuery = `
+            INSERT INTO asignaciones (colaborador_id, evento_id, completado)
+            VALUES ($1, $2, false)
+            RETURNING *
+          `;
+          
+          const resultado = await client.query(insertQuery, [colaborador_id, evento_id]);
+          asignaciones.push(resultado.rows[0]);
+        }
+      }
+      
+      await client.query('COMMIT');
+      return asignaciones;
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error al asignar múltiples:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+}
 
-export default Asignaciones;
+module.exports = Asignacion;
