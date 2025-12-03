@@ -28,20 +28,17 @@ const corsOptions = {
       'http://localhost:5173',
       'https://onboarding-kappa-nine.vercel.app'
     ];
-    
-    // Permitir requests sin origin (como Postman, o requests del mismo servidor)
-    if (!origin) return callback(null, true);
-    
-    // Permitir cualquier subdominio de vercel.app
-    if (origin.endsWith('.vercel.app')) {
+
+    // Permitir Thunder Client y Postman (que mandan origins raros)
+    if (!origin || origin.startsWith('vscode') || origin.startsWith('http')) {
       return callback(null, true);
     }
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
     }
+
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
