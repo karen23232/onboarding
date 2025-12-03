@@ -455,17 +455,4 @@ textarea.form-input {
         width: 100%;
         justify-content: center;
     }
-    /* Badge para estado INCOMPLETO */
-    .badge-incomplete {
-        background: #ffebee;
-        color: #c62828;
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-    }
 }

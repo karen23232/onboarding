@@ -21,6 +21,7 @@ const Colaboradores = () => {
   const usuarioActual = JSON.parse(localStorage.getItem('user') || '{}');
   const rolUsuario = usuarioActual.rol || 'colaborador';
   
+  // CORRECCIÓN FINAL: Comparar con los roles en minúsculas de la base de datos
   const puedeGestionarColaboradores = 
     rolUsuario === 'admin' || 
     rolUsuario === 'rrhh';
@@ -77,17 +78,10 @@ const Colaboradores = () => {
     
     setModoEdicion(true);
     setColaboradorEditando(colaborador);
-    
-    // Limpiar la fecha de cualquier timezone
-    let fechaLimpia = '';
-    if (colaborador.fecha_ingreso) {
-      fechaLimpia = colaborador.fecha_ingreso.split('T')[0];
-    }
-    
     setFormData({
       nombre_completo: colaborador.nombre_completo,
       correo: colaborador.correo,
-      fecha_ingreso: fechaLimpia,
+      fecha_ingreso: colaborador.fecha_ingreso.split('T')[0],
       notas: colaborador.notas || ''
     });
     setMostrarModal(true);
@@ -167,84 +161,6 @@ const Colaboradores = () => {
     return true;
   });
 
-  // Función para formatear fechas
-  const formatearFecha = (fechaString) => {
-    if (!fechaString) return '-';
-    
-    // Remover timezone si existe y tomar solo la fecha
-    const soloFecha = fechaString.split('T')[0];
-    const [año, mes, dia] = soloFecha.split('-');
-    return `${dia}/${mes}/${año}`;
-  };
-
-  // ✅ FUNCIÓN NUEVA: Renderizar estado de Onboarding Bienvenida
-  const renderEstadoBienvenida = (colaborador) => {
-    // Si está completado
-    if (colaborador.onboarding_bienvenida) {
-      return (
-        <span className="badge badge-success">
-          ✓ COMPLETADO
-        </span>
-      );
-    }
-    
-    // Si NO está completado y tiene permisos
-    if (puedeGestionarColaboradores) {
-      return (
-        <button 
-          onClick={() => handleCompletarBienvenida(colaborador.id)}
-          className="badge badge-warning clickable"
-        >
-          MARCAR COMPLETADO
-        </button>
-      );
-    }
-    
-    // Si NO está completado y NO tiene permisos
-    return (
-      <span className="badge badge-incomplete">
-        ⏳ INCOMPLETO
-      </span>
-    );
-  };
-
-  // ✅ FUNCIÓN NUEVA: Renderizar estado de Onboarding Técnico
-  const renderEstadoTecnico = (colaborador) => {
-    // Si está completado
-    if (colaborador.onboarding_tecnico) {
-      return (
-        <span className="badge badge-success">
-          ✓ COMPLETADO
-        </span>
-      );
-    }
-    
-    // Si NO está completado pero tiene fecha técnica asignada
-    if (colaborador.fecha_onboarding_tecnico && colaborador.fecha_onboarding_tecnico !== '-') {
-      // Si tiene permisos, mostrar botón
-      if (puedeGestionarColaboradores) {
-        return (
-          <button 
-            onClick={() => handleCompletarTecnico(colaborador.id)}
-            className="badge badge-warning clickable"
-          >
-            MARCAR COMPLETADO
-          </button>
-        );
-      }
-      
-      // Si NO tiene permisos, mostrar INCOMPLETO
-      return (
-        <span className="badge badge-incomplete">
-          ⏳ INCOMPLETO
-        </span>
-      );
-    }
-    
-    // Si NO tiene fecha técnica asignada
-    return <span style={{ color: '#999' }}>-</span>;
-  };
-
   if (loading) {
     return (
       <>
@@ -274,6 +190,7 @@ const Colaboradores = () => {
             </p>
           </div>
           
+          {/* Solo mostrar botón si tiene permisos */}
           {puedeGestionarColaboradores && (
             <button 
               onClick={() => setMostrarModal(true)} 
@@ -285,6 +202,7 @@ const Colaboradores = () => {
           )}
         </div>
 
+        {/* Mensaje informativo para colaboradores */}
         {!puedeGestionarColaboradores && (
           <div className="info-banner">
             <span className="info-icon">ℹ️</span>
@@ -413,14 +331,41 @@ const Colaboradores = () => {
                   <tr key={colaborador.id}>
                     <td className="td-name">{colaborador.nombre_completo}</td>
                     <td>{colaborador.correo}</td>
-                    <td>{formatearFecha(colaborador.fecha_ingreso)}</td>
+                    <td>{new Date(colaborador.fecha_ingreso).toLocaleDateString('es-CO')}</td>
                     <td>
-                      {renderEstadoBienvenida(colaborador)}
+                      {colaborador.onboarding_bienvenida ? (
+                        <span className="badge badge-success">✓ Completado</span>
+                      ) : puedeGestionarColaboradores ? (
+                        <button 
+                          onClick={() => handleCompletarBienvenida(colaborador.id)}
+                          className="badge badge-warning clickable"
+                        >
+                          Marcar Completado
+                        </button>
+                      ) : (
+                        <span className="badge badge-warning">Pendiente</span>
+                      )}
                     </td>
                     <td>
-                      {renderEstadoTecnico(colaborador)}
+                      {colaborador.onboarding_tecnico ? (
+                        <span className="badge badge-success">✓ Completado</span>
+                      ) : puedeGestionarColaboradores ? (
+                        <button 
+                          onClick={() => handleCompletarTecnico(colaborador.id)}
+                          className="badge badge-warning clickable"
+                        >
+                          Marcar Completado
+                        </button>
+                      ) : (
+                        <span className="badge badge-warning">Pendiente</span>
+                      )}
                     </td>
-                    <td>{formatearFecha(colaborador.fecha_onboarding_tecnico)}</td>
+                    <td>
+                      {colaborador.fecha_onboarding_tecnico 
+                        ? new Date(colaborador.fecha_onboarding_tecnico).toLocaleDateString('es-CO')
+                        : '-'
+                      }
+                    </td>
                     {puedeGestionarColaboradores && (
                       <td className="td-actions">
                         <button
