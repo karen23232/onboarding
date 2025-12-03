@@ -8,19 +8,20 @@ class AlertasJob {
     try {
       console.log('');
       console.log('🔔 ===============================================');
-      console.log('🔔 INICIANDO VERIFICACIÓN DE ALERTAS');
+      console.log('🔔 INICIANDO VERIFICACIÓN DE ALERTAS (MODO PRUEBA)');
       console.log('🔔 ===============================================');
       console.log(`📅 Fecha actual: ${new Date().toLocaleString('es-CO')}`);
       
-      // Calcular fecha límite (7 días desde hoy)
+      // 🧪 MODO PRUEBA: Buscar TODOS los eventos futuros (no solo 7 días)
       const fechaLimite = new Date();
-      fechaLimite.setDate(fechaLimite.getDate() + 7);
+      fechaLimite.setDate(fechaLimite.getDate() + 365); // Un año en el futuro
       const fechaLimiteStr = fechaLimite.toISOString().split('T')[0];
       
-      console.log(`📅 Verificando eventos para: ${fechaLimiteStr}`);
+      console.log(`🧪 MODO PRUEBA: Enviando alertas para TODOS los eventos futuros`);
+      console.log(`📅 Buscando eventos hasta: ${fechaLimiteStr}`);
       console.log('');
 
-      // Buscar eventos que inician en 7 días con colaboradores asignados
+      // Buscar TODOS los eventos futuros con colaboradores asignados
       const query = `
         SELECT 
           co.id as evento_id,
@@ -35,17 +36,17 @@ class AlertasJob {
         FROM calendario_onboardings co
         INNER JOIN asignaciones a ON co.id = a.evento_id
         INNER JOIN colaboradores c ON a.colaborador_id = c.id
-        WHERE co.fecha_inicio::date = $1::date
+        WHERE co.fecha_inicio::date >= CURRENT_DATE
+        AND co.fecha_inicio::date <= $1::date
         AND a.completado = false
         AND co.activo = true
-        ORDER BY co.nombre_evento, c.nombre_completo
+        ORDER BY co.fecha_inicio, co.nombre_evento, c.nombre_completo
       `;
 
       const resultado = await pool.query(query, [fechaLimiteStr]);
 
       if (resultado.rows.length === 0) {
-        console.log('ℹ️  No hay eventos próximos para alertar');
-        console.log(`   (Buscando eventos para el ${fechaLimiteStr})`);
+        console.log('ℹ️  No hay eventos futuros con asignaciones pendientes');
         console.log('');
         console.log('🔔 ===============================================');
         console.log('');
@@ -82,7 +83,9 @@ class AlertasJob {
       // Mostrar resumen de eventos
       console.log('📋 EVENTOS A PROCESAR:');
       Object.values(eventosPorId).forEach(evento => {
+        const fechaEvento = new Date(evento.fecha_inicio).toLocaleDateString('es-CO');
         console.log(`   • ${evento.nombre_evento} (${evento.tipo})`);
+        console.log(`     Fecha: ${fechaEvento}`);
         console.log(`     Colaboradores: ${evento.colaboradores.length}`);
       });
       console.log('');
@@ -142,19 +145,11 @@ class AlertasJob {
     console.log('');
 
     // Ejecutar todos los días a las 9:00 AM (Colombia)
-    // Formato: segundo minuto hora día mes día-semana
     cron.schedule('0 9 * * *', async () => {
       await this.ejecutarVerificacion();
     }, {
       timezone: "America/Bogota"
     });
-
-    // OPCIONAL: Para testing, también ejecutar cada hora
-    // Descomenta esta línea si quieres probar más frecuentemente
-    // cron.schedule('0 * * * *', async () => {
-    //   console.log('⏰ [TEST] Ejecución de prueba por hora');
-    //   await this.ejecutarVerificacion();
-    // });
 
     console.log('✅ Cron job de alertas configurado exitosamente');
     console.log('');
@@ -162,7 +157,7 @@ class AlertasJob {
 
   // Ejecutar manualmente (para pruebas)
   static async ejecutarManualmente() {
-    console.log('🔧 Ejecutando verificación manual...');
+    console.log('🔧 Ejecutando verificación manual (MODO PRUEBA)...');
     return await this.ejecutarVerificacion();
   }
 }
