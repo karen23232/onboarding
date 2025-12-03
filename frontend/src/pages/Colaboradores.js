@@ -167,7 +167,7 @@ const Colaboradores = () => {
     return true;
   });
 
-  // FUNCIÓN CORREGIDA para formatear fechas
+  // Función para formatear fechas
   const formatearFecha = (fechaString) => {
     if (!fechaString) return '-';
     
@@ -175,6 +175,74 @@ const Colaboradores = () => {
     const soloFecha = fechaString.split('T')[0];
     const [año, mes, dia] = soloFecha.split('-');
     return `${dia}/${mes}/${año}`;
+  };
+
+  // ✅ FUNCIÓN NUEVA: Renderizar estado de Onboarding Bienvenida
+  const renderEstadoBienvenida = (colaborador) => {
+    // Si está completado
+    if (colaborador.onboarding_bienvenida) {
+      return (
+        <span className="badge badge-success">
+          ✓ COMPLETADO
+        </span>
+      );
+    }
+    
+    // Si NO está completado y tiene permisos
+    if (puedeGestionarColaboradores) {
+      return (
+        <button 
+          onClick={() => handleCompletarBienvenida(colaborador.id)}
+          className="badge badge-warning clickable"
+        >
+          MARCAR COMPLETADO
+        </button>
+      );
+    }
+    
+    // Si NO está completado y NO tiene permisos
+    return (
+      <span className="badge badge-incomplete">
+        ⏳ INCOMPLETO
+      </span>
+    );
+  };
+
+  // ✅ FUNCIÓN NUEVA: Renderizar estado de Onboarding Técnico
+  const renderEstadoTecnico = (colaborador) => {
+    // Si está completado
+    if (colaborador.onboarding_tecnico) {
+      return (
+        <span className="badge badge-success">
+          ✓ COMPLETADO
+        </span>
+      );
+    }
+    
+    // Si NO está completado pero tiene fecha técnica asignada
+    if (colaborador.fecha_onboarding_tecnico && colaborador.fecha_onboarding_tecnico !== '-') {
+      // Si tiene permisos, mostrar botón
+      if (puedeGestionarColaboradores) {
+        return (
+          <button 
+            onClick={() => handleCompletarTecnico(colaborador.id)}
+            className="badge badge-warning clickable"
+          >
+            MARCAR COMPLETADO
+          </button>
+        );
+      }
+      
+      // Si NO tiene permisos, mostrar INCOMPLETO
+      return (
+        <span className="badge badge-incomplete">
+          ⏳ INCOMPLETO
+        </span>
+      );
+    }
+    
+    // Si NO tiene fecha técnica asignada
+    return <span style={{ color: '#999' }}>-</span>;
   };
 
   if (loading) {
@@ -347,32 +415,10 @@ const Colaboradores = () => {
                     <td>{colaborador.correo}</td>
                     <td>{formatearFecha(colaborador.fecha_ingreso)}</td>
                     <td>
-                      {colaborador.onboarding_bienvenida ? (
-                        <span className="badge badge-success">✓ Completado</span>
-                      ) : puedeGestionarColaboradores ? (
-                        <button 
-                          onClick={() => handleCompletarBienvenida(colaborador.id)}
-                          className="badge badge-warning clickable"
-                        >
-                          Marcar Completado
-                        </button>
-                      ) : (
-                        <span className="badge badge-warning">Pendiente</span>
-                      )}
+                      {renderEstadoBienvenida(colaborador)}
                     </td>
                     <td>
-                      {colaborador.onboarding_tecnico ? (
-                        <span className="badge badge-success">✓ Completado</span>
-                      ) : puedeGestionarColaboradores ? (
-                        <button 
-                          onClick={() => handleCompletarTecnico(colaborador.id)}
-                          className="badge badge-warning clickable"
-                        >
-                          Marcar Completado
-                        </button>
-                      ) : (
-                        <span className="badge badge-warning">Pendiente</span>
-                      )}
+                      {renderEstadoTecnico(colaborador)}
                     </td>
                     <td>{formatearFecha(colaborador.fecha_onboarding_tecnico)}</td>
                     {puedeGestionarColaboradores && (
