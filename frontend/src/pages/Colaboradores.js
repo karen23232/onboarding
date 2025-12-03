@@ -107,23 +107,27 @@ const Colaboradores = () => {
 
   const handleCompletarBienvenida = async (id) => {
     if (!puedeGestionarColaboradores) {
-      alert('No tienes permisos para marcar onboardings como completados');
+      alert('No tienes permisos para marcar onboardings');
       return;
     }
     
     try {
-      await colaboradoresAPI.completarBienvenida(id);
-      alert('Onboarding de bienvenida marcado como completado');
-      cargarColaboradores();
+      const response = await colaboradoresAPI.completarBienvenida(id);
+      if (response.data.colaborador) {
+        alert('Onboarding de bienvenida marcado como completado');
+        cargarColaboradores();
+      } else {
+        alert('Este onboarding ya tiene un estado asignado');
+      }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al actualizar estado');
+      alert('Error al actualizar estado o el onboarding ya fue marcado');
     }
   };
 
   const handleCompletarTecnico = async (id) => {
     if (!puedeGestionarColaboradores) {
-      alert('No tienes permisos para marcar onboardings como completados');
+      alert('No tienes permisos para marcar onboardings');
       return;
     }
     
@@ -132,48 +136,56 @@ const Colaboradores = () => {
     if (!fecha) return;
     
     try {
-      await colaboradoresAPI.completarTecnico(id, fecha);
-      alert('Onboarding técnico marcado como completado');
-      cargarColaboradores();
+      const response = await colaboradoresAPI.completarTecnico(id, fecha);
+      if (response.data.colaborador) {
+        alert('Onboarding técnico marcado como completado');
+        cargarColaboradores();
+      } else {
+        alert('Este onboarding ya tiene un estado asignado');
+      }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al actualizar estado');
+      alert('Error al actualizar estado o el onboarding ya fue marcado');
     }
   };
 
   const handleMarcarIncompletoBienvenida = async (id) => {
     if (!puedeGestionarColaboradores) {
-      alert('No tienes permisos para marcar onboardings como incompletos');
+      alert('No tienes permisos para marcar onboardings');
       return;
     }
     
-    if (!window.confirm('¿Estás seguro de marcar este onboarding como incompleto?')) return;
-    
     try {
-      await colaboradoresAPI.marcarIncompletoBienvenida(id);
-      alert('Onboarding de bienvenida marcado como incompleto');
-      cargarColaboradores();
+      const response = await colaboradoresAPI.marcarIncompletoBienvenida(id);
+      if (response.data.colaborador) {
+        alert('Onboarding de bienvenida marcado como incompleto');
+        cargarColaboradores();
+      } else {
+        alert('Este onboarding ya tiene un estado asignado');
+      }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al actualizar estado');
+      alert('Error al actualizar estado o el onboarding ya fue marcado');
     }
   };
 
   const handleMarcarIncompletoTecnico = async (id) => {
     if (!puedeGestionarColaboradores) {
-      alert('No tienes permisos para marcar onboardings como incompletos');
+      alert('No tienes permisos para marcar onboardings');
       return;
     }
     
-    if (!window.confirm('¿Estás seguro de marcar este onboarding como incompleto? Se eliminará también la fecha de completación.')) return;
-    
     try {
-      await colaboradoresAPI.marcarIncompletoTecnico(id);
-      alert('Onboarding técnico marcado como incompleto');
-      cargarColaboradores();
+      const response = await colaboradoresAPI.marcarIncompletoTecnico(id);
+      if (response.data.colaborador) {
+        alert('Onboarding técnico marcado como incompleto');
+        cargarColaboradores();
+      } else {
+        alert('Este onboarding ya tiene un estado asignado');
+      }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al actualizar estado');
+      alert('Error al actualizar estado o el onboarding ya fue marcado');
     }
   };
 
@@ -191,9 +203,9 @@ const Colaboradores = () => {
 
   const colaboradoresFiltrados = colaboradores.filter(c => {
     if (filtro === 'todos') return true;
-    if (filtro === 'pendiente_bienvenida') return !c.onboarding_bienvenida;
-    if (filtro === 'pendiente_tecnico') return !c.onboarding_tecnico;
-    if (filtro === 'completados') return c.onboarding_bienvenida && c.onboarding_tecnico;
+    if (filtro === 'pendiente_bienvenida') return c.onboarding_bienvenida === null;
+    if (filtro === 'pendiente_tecnico') return c.onboarding_tecnico === null;
+    if (filtro === 'completados') return c.onboarding_bienvenida === true && c.onboarding_tecnico === true;
     return true;
   });
 
@@ -263,19 +275,19 @@ const Colaboradores = () => {
             className={`filter-btn ${filtro === 'pendiente_bienvenida' ? 'active' : ''}`}
             onClick={() => setFiltro('pendiente_bienvenida')}
           >
-            Pendiente Bienvenida ({colaboradores.filter(c => !c.onboarding_bienvenida).length})
+            Pendiente Bienvenida ({colaboradores.filter(c => c.onboarding_bienvenida === null).length})
           </button>
           <button 
             className={`filter-btn ${filtro === 'pendiente_tecnico' ? 'active' : ''}`}
             onClick={() => setFiltro('pendiente_tecnico')}
           >
-            Pendiente Técnico ({colaboradores.filter(c => !c.onboarding_tecnico).length})
+            Pendiente Técnico ({colaboradores.filter(c => c.onboarding_tecnico === null).length})
           </button>
           <button 
             className={`filter-btn ${filtro === 'completados' ? 'active' : ''}`}
             onClick={() => setFiltro('completados')}
           >
-            Completados ({colaboradores.filter(c => c.onboarding_bienvenida && c.onboarding_tecnico).length})
+            Completados ({colaboradores.filter(c => c.onboarding_bienvenida === true && c.onboarding_tecnico === true).length})
           </button>
         </div>
 

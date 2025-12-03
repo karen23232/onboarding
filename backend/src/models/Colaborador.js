@@ -6,16 +6,14 @@ class Colaborador {
       nombre_completo,
       correo,
       fecha_ingreso,
-      onboarding_bienvenida = false,
-      onboarding_tecnico = false,
-      fecha_onboarding_tecnico = null,
       notas = ''
     } = datosColaborador;
 
+    // ✅ IMPORTANTE: Se crean con NULL para que aparezcan los 2 botones
     const query = `
       INSERT INTO colaboradores 
       (nombre_completo, correo, fecha_ingreso, onboarding_bienvenida, onboarding_tecnico, fecha_onboarding_tecnico, notas)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, NULL, NULL, NULL, $4)
       RETURNING *
     `;
 
@@ -23,9 +21,6 @@ class Colaborador {
       nombre_completo,
       correo,
       fecha_ingreso,
-      onboarding_bienvenida,
-      onboarding_tecnico,
-      fecha_onboarding_tecnico,
       notas
     ];
 
@@ -133,17 +128,19 @@ class Colaborador {
     return resultado.rows[0];
   }
 
+  // ✅ Solo permite marcar como completado si está en NULL (pendiente)
   static async completarOnboardingBienvenida(id) {
     const query = `
       UPDATE colaboradores 
       SET onboarding_bienvenida = true, actualizado_en = CURRENT_TIMESTAMP
-      WHERE id = $1
+      WHERE id = $1 AND onboarding_bienvenida IS NULL
       RETURNING *
     `;
     const resultado = await pool.query(query, [id]);
     return resultado.rows[0];
   }
 
+  // ✅ Solo permite marcar como completado si está en NULL (pendiente)
   static async completarOnboardingTecnico(id, fecha = null) {
     const fechaCompletado = fecha || new Date().toISOString().split('T')[0];
     const query = `
@@ -151,35 +148,37 @@ class Colaborador {
       SET onboarding_tecnico = true, 
           fecha_onboarding_tecnico = $2,
           actualizado_en = CURRENT_TIMESTAMP
-      WHERE id = $1
+      WHERE id = $1 AND onboarding_tecnico IS NULL
       RETURNING *
     `;
     const resultado = await pool.query(query, [id, fechaCompletado]);
     return resultado.rows[0];
   }
-  static async marcarIncompletoOnboardingBienvenida(id) {
-  const query = `
-    UPDATE colaboradores 
-    SET onboarding_bienvenida = false, actualizado_en = CURRENT_TIMESTAMP
-    WHERE id = $1
-    RETURNING *
-  `;
-  const resultado = await pool.query(query, [id]);
-  return resultado.rows[0];
-}
 
-static async marcarIncompletoOnboardingTecnico(id) {
-  const query = `
-    UPDATE colaboradores 
-    SET onboarding_tecnico = false, 
-        fecha_onboarding_tecnico = NULL,
-        actualizado_en = CURRENT_TIMESTAMP
-    WHERE id = $1
-    RETURNING *
-  `;
-  const resultado = await pool.query(query, [id]);
-  return resultado.rows[0];
-}
+  // ✅ Solo permite marcar como incompleto si está en NULL (pendiente)
+  static async marcarIncompletoOnboardingBienvenida(id) {
+    const query = `
+      UPDATE colaboradores 
+      SET onboarding_bienvenida = false, actualizado_en = CURRENT_TIMESTAMP
+      WHERE id = $1 AND onboarding_bienvenida IS NULL
+      RETURNING *
+    `;
+    const resultado = await pool.query(query, [id]);
+    return resultado.rows[0];
+  }
+
+  // ✅ Solo permite marcar como incompleto si está en NULL (pendiente)
+  static async marcarIncompletoOnboardingTecnico(id) {
+    const query = `
+      UPDATE colaboradores 
+      SET onboarding_tecnico = false, 
+          actualizado_en = CURRENT_TIMESTAMP
+      WHERE id = $1 AND onboarding_tecnico IS NULL
+      RETURNING *
+    `;
+    const resultado = await pool.query(query, [id]);
+    return resultado.rows[0];
+  }
 
   static async filtrarPorEstado(filtros) {
     let query = `
