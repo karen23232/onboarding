@@ -170,12 +170,13 @@ class NotificacionService {
       }
 
       // ✅ VALIDACIÓN 3: Verificar que el colaborador tiene correo
-      // El campo puede ser "correo" o "email" dependiendo de dónde venga
-      const emailColaborador = colaborador.correo || colaborador.email;
-      
-      if (!emailColaborador) {
-        throw new Error(`❌ Colaborador "${colaborador.nombre_completo || colaborador.id || 'desconocido'}" no tiene correo configurado`);
+      // IMPORTANTE: En la BD la columna se llama "correo", no "email"
+      if (!colaborador.correo) {
+        console.error('❌ Colaborador sin correo:', JSON.stringify(colaborador, null, 2));
+        throw new Error(`❌ Colaborador "${colaborador.nombre_completo || colaborador.id || 'desconocido'}" no tiene correo configurado. Campo correo: ${colaborador.correo}`);
       }
+      
+      const emailColaborador = colaborador.correo;
 
       // ✅ VALIDACIÓN 4: Verificar que el evento tiene nombre
       if (!evento.nombre_evento) {
