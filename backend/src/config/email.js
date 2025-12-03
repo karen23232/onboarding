@@ -9,47 +9,44 @@ console.log('   Password:', process.env.EMAIL_PASSWORD ? '✅ Configurada' : '�
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: parseInt(process.env.EMAIL_PORT),
-  secure: false, // false para puerto 587, true para 465
+  secure: false, // false para puerto 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
   },
   tls: {
-    rejectUnauthorized: false // Solo para desarrollo
+    rejectUnauthorized: false
   },
-  // ✅ AGREGAR TIMEOUTS PARA EVITAR BLOQUEOS
-  connectionTimeout: 10000,  // 10 segundos para conectar
-  greetingTimeout: 10000,    // 10 segundos para greeting
-  socketTimeout: 15000,      // 15 segundos para operaciones de socket
-  // Pool para manejar múltiples correos
+  // ✅ TIMEOUTS PARA EVITAR BLOQUEOS
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+  // Pool para múltiples correos
   pool: true,
   maxConnections: 5,
   maxMessages: 10,
-  // Rate limiting
-  rateDelta: 1000,  // 1 segundo
-  rateLimit: 5      // máximo 5 correos por segundo
+  rateDelta: 1000,
+  rateLimit: 5
 });
 
-// Verificar conexión al iniciar
+// Verificar conexión
 transporter.verify(function(error, success) {
   if (error) {
     console.error('❌ Error en configuración de email:', error.message);
     console.error('');
     console.error('⚠️  VERIFICA:');
-    console.error('   1. La verificación en 2 pasos está ACTIVA en Gmail');
-    console.error('   2. La contraseña de aplicación es correcta (sin espacios)');
-    console.error('   3. El correo EMAIL_USER es correcto');
-    console.error('   4. El puerto 587 está abierto en tu red');
+    console.error('   1. Contraseña de aplicación correcta (sin espacios)');
+    console.error('   2. Verificación en 2 pasos ACTIVA');
+    console.error('   3. Puerto 587 abierto');
     console.error('');
   } else {
-    console.log('✅ Servidor de email listo para enviar mensajes');
+    console.log('✅ Servidor de email listo');
     console.log('');
   }
 });
 
-// ✅ MANEJAR EVENTOS DE ERROR PARA NO CRASHEAR LA APP
 transporter.on('error', (error) => {
-  console.error('❌ Error del transporter de email:', error.message);
+  console.error('❌ Error del transporter:', error.message);
 });
 
 module.exports = transporter;
