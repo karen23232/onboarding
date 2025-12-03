@@ -10,7 +10,10 @@
     background: #0047ab;
 }
 
-/* LADO IZQUIERDO */
+/* ===========================
+   LADO IZQUIERDO
+   =========================== */
+
 .registro-left {
     flex: 1;
     display: flex;
@@ -146,7 +149,10 @@
     );
 }
 
-/* LADO DERECHO */
+/* ===========================
+   LADO DERECHO
+   =========================== */
+
 .registro-right {
     flex: 1;
     display: flex;
@@ -397,60 +403,400 @@
     text-decoration: underline;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
+/* ===========================
+   RESPONSIVE MEJORADO
+   =========================== */
+
+/* Desktop grande (1200px - 1400px) */
+@media (max-width: 1400px) {
+    .registro-left {
+        padding: 60px 70px;
+    }
+
+    .registro-right {
+        padding: 60px 50px;
+    }
+
+    .registro-card {
+        max-width: 500px;
+    }
+}
+
+/* Desktop mediano y tablets grandes (1024px - 1199px) */
+@media (max-width: 1199px) {
     .registro-left {
         padding: 50px 60px;
+    }
+
+    .registro-brand {
+        margin-bottom: 70px;
     }
 
     .registro-brand h1 {
         font-size: 26px;
     }
 
+    .brand-subtitle {
+        font-size: 15px;
+    }
+
+    .registro-info {
+        margin-top: 50px;
+    }
+
     .registro-info h3 {
-        font-size: 24px;
+        font-size: 38px;
+        margin-bottom: 35px;
+    }
+
+    .info-list {
+        gap: 16px;
+    }
+
+    .info-list li {
+        padding: 24px 28px;
+        font-size: 16px;
+    }
+
+    .info-icon {
+        font-size: 30px;
+        width: 54px;
+        height: 54px;
+    }
+
+    .registro-right {
+        padding: 50px 40px;
+    }
+
+    .registro-card {
+        max-width: 480px;
+        padding: 45px 40px;
+    }
+
+    .registro-header h2 {
+        font-size: 30px;
     }
 }
 
+/* Tablets grandes (1024px) */
+@media (max-width: 1024px) {
+    .registro-left {
+        padding: 50px 60px;
+    }
+
+    .brand-logo-box {
+        width: 65px;
+        height: 65px;
+    }
+
+    .logo-icon {
+        font-size: 46px;
+    }
+
+    .registro-brand h1 {
+        font-size: 26px;
+    }
+
+    .brand-subtitle {
+        font-size: 15px;
+    }
+
+    .registro-info h3 {
+        font-size: 36px;
+        margin-bottom: 32px;
+    }
+
+    .info-list {
+        gap: 15px;
+    }
+
+    .info-list li {
+        padding: 22px 26px;
+        font-size: 16px;
+        gap: 20px;
+    }
+
+    .info-icon {
+        font-size: 28px;
+        width: 52px;
+        height: 52px;
+    }
+
+    .registro-right {
+        padding: 50px 40px;
+    }
+
+    .registro-card {
+        max-width: 460px;
+        padding: 42px 38px;
+    }
+
+    .registro-header h2 {
+        font-size: 29px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .rol-info-box {
+        padding: 18px;
+        margin-bottom: 22px;
+    }
+}
+
+/* Tablets medianas (968px) - Cambio a columna */
 @media (max-width: 968px) {
     .registro-container {
         flex-direction: column;
     }
 
     .registro-left {
-        padding: 40px 30px;
+        padding: 40px 50px;
+        min-height: auto;
     }
 
     .registro-brand {
-        margin-bottom: 50px;
+        margin-bottom: 60px;
     }
 
     .registro-brand h1 {
         font-size: 24px;
     }
 
+    .brand-subtitle {
+        font-size: 14px;
+    }
+
     .registro-info {
-        margin-top: 30px;
+        margin-top: 40px;
+        max-width: 100%;
     }
 
     .registro-info h3 {
-        font-size: 22px;
+        font-size: 32px;
+        margin-bottom: 30px;
+    }
+
+    .info-list {
+        gap: 14px;
+    }
+
+    .info-list li {
+        padding: 20px 24px;
+        font-size: 15px;
+    }
+
+    .info-icon {
+        font-size: 26px;
+        width: 50px;
+        height: 50px;
     }
 
     .registro-right {
-        padding: 40px 30px;
+        padding: 40px 50px;
     }
 
     .registro-card {
+        max-width: 520px;
         padding: 40px 35px;
+    }
+
+    .registro-header {
+        margin-bottom: 30px;
+    }
+
+    .registro-header h2 {
+        font-size: 28px;
     }
 }
 
+/* Tablets pequeñas (768px) */
+@media (max-width: 768px) {
+    .registro-left {
+        padding: 40px 40px;
+    }
+
+    .registro-brand {
+        gap: 18px;
+        margin-bottom: 50px;
+    }
+
+    .brand-logo-box {
+        width: 60px;
+        height: 60px;
+    }
+
+    .logo-icon {
+        font-size: 42px;
+    }
+
+    .registro-brand h1 {
+        font-size: 23px;
+    }
+
+    .brand-subtitle {
+        font-size: 14px;
+    }
+
+    .registro-info {
+        margin-top: 35px;
+    }
+
+    .registro-info h3 {
+        font-size: 28px;
+        margin-bottom: 25px;
+    }
+
+    .info-list {
+        gap: 12px;
+    }
+
+    .info-list li {
+        padding: 18px 22px;
+        font-size: 15px;
+        gap: 18px;
+        border-radius: 16px;
+    }
+
+    .info-list li:hover {
+        transform: translateX(4px) scale(1.01);
+    }
+
+    .info-icon {
+        font-size: 24px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+    }
+
+    .registro-right {
+        padding: 40px 40px;
+    }
+
+    .registro-card {
+        padding: 38px 32px;
+        border-radius: 20px;
+    }
+
+    .registro-header {
+        margin-bottom: 28px;
+    }
+
+    .registro-header h2 {
+        font-size: 26px;
+        margin-bottom: 8px;
+    }
+
+    .registro-header p {
+        font-size: 14px;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        font-size: 13px;
+        margin-bottom: 22px;
+    }
+
+    .alert-icon {
+        font-size: 17px;
+    }
+
+    .registro-form {
+        margin-bottom: 22px;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-select {
+        padding: 13px 14px;
+        font-size: 14px;
+    }
+
+    .form-select {
+        padding-right: 42px;
+    }
+
+    .rol-info-box {
+        padding: 16px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+    }
+
+    .rol-info-header {
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .rol-info-icon {
+        font-size: 32px;
+    }
+
+    .rol-info-header h4 {
+        font-size: 17px;
+    }
+
+    .rol-info-header p {
+        font-size: 13px;
+    }
+
+    .rol-permisos {
+        padding-top: 12px;
+    }
+
+    .rol-permisos strong {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .rol-permisos li {
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .btn {
+        padding: 14px 22px;
+        font-size: 15px;
+    }
+
+    .registro-footer {
+        padding-top: 18px;
+    }
+
+    .registro-footer p {
+        font-size: 13px;
+    }
+}
+
+/* Móviles grandes (640px) */
 @media (max-width: 640px) {
+    .registro-left {
+        padding: 30px 30px;
+    }
+
     .registro-brand {
         flex-direction: column;
         align-items: flex-start;
+        gap: 14px;
         margin-bottom: 40px;
+    }
+
+    .brand-logo-box {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+    }
+
+    .logo-icon {
+        font-size: 38px;
     }
 
     .registro-brand h1 {
@@ -458,7 +804,331 @@
     }
 
     .brand-subtitle {
+        font-size: 13px;
+    }
+
+    .registro-info {
+        margin-top: 30px;
+    }
+
+    .registro-info h3 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .info-list {
+        gap: 10px;
+    }
+
+    .info-list li {
+        padding: 18px 20px;
         font-size: 14px;
+        gap: 16px;
+        border-radius: 14px;
+    }
+
+    .info-icon {
+        font-size: 22px;
+        width: 45px;
+        height: 45px;
+        border-radius: 11px;
+    }
+
+    .registro-right {
+        padding: 30px 30px;
+    }
+
+    .registro-card {
+        padding: 35px 28px;
+        border-radius: 18px;
+    }
+
+    .registro-header {
+        margin-bottom: 25px;
+    }
+
+    .registro-header h2 {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+
+    .registro-header p {
+        font-size: 14px;
+    }
+
+    .alert {
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .alert-icon {
+        font-size: 16px;
+    }
+
+    .registro-form {
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-select {
+        padding: 12px 14px;
+        font-size: 14px;
+        border-radius: 8px;
+    }
+
+    .form-select {
+        padding-right: 40px;
+    }
+
+    .rol-info-box {
+        padding: 16px;
+        margin-bottom: 18px;
+        border-radius: 10px;
+    }
+
+    .rol-info-header {
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .rol-info-icon {
+        font-size: 30px;
+    }
+
+    .rol-info-header h4 {
+        font-size: 16px;
+    }
+
+    .rol-info-header p {
+        font-size: 13px;
+    }
+
+    .btn {
+        padding: 13px 20px;
+        font-size: 15px;
+        border-radius: 8px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+    }
+
+    .registro-footer {
+        padding-top: 16px;
+    }
+
+    .registro-footer p {
+        font-size: 13px;
+    }
+}
+
+/* Móviles medianos (480px) */
+@media (max-width: 480px) {
+    .registro-left {
+        padding: 25px 20px;
+    }
+
+    .registro-brand {
+        margin-bottom: 35px;
+        gap: 12px;
+    }
+
+    .brand-logo-box {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+    }
+
+    .logo-icon {
+        font-size: 36px;
+    }
+
+    .registro-brand h1 {
+        font-size: 20px;
+    }
+
+    .brand-subtitle {
+        font-size: 12px;
+    }
+
+    .registro-info {
+        margin-top: 25px;
+    }
+
+    .registro-info h3 {
+        font-size: 22px;
+        margin-bottom: 18px;
+    }
+
+    .info-list {
+        gap: 10px;
+    }
+
+    .info-list li {
+        padding: 16px 18px;
+        font-size: 14px;
+        gap: 14px;
+        border-radius: 12px;
+    }
+
+    .info-icon {
+        font-size: 20px;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+    }
+
+    .registro-right {
+        padding: 25px 20px;
+    }
+
+    .registro-card {
+        padding: 30px 24px;
+        border-radius: 16px;
+    }
+
+    .registro-header {
+        margin-bottom: 22px;
+    }
+
+    .registro-header h2 {
+        font-size: 22px;
+        margin-bottom: 6px;
+    }
+
+    .registro-header p {
+        font-size: 13px;
+    }
+
+    .alert {
+        padding: 10px 12px;
+        font-size: 12px;
+        margin-bottom: 18px;
+    }
+
+    .alert-icon {
+        font-size: 15px;
+    }
+
+    .registro-form {
+        margin-bottom: 18px;
+    }
+
+    .form-group {
+        margin-bottom: 14px;
+    }
+
+    .form-group label {
+        font-size: 12px;
+        margin-bottom: 7px;
+    }
+
+    .form-input,
+    .form-select {
+        padding: 11px 12px;
+        font-size: 13px;
+        border-width: 1.5px;
+    }
+
+    .form-select {
+        padding-right: 38px;
+        background-position: right 12px center;
+    }
+
+    .rol-info-box {
+        padding: 14px;
+        margin-bottom: 16px;
+        border-width: 1.5px;
+    }
+
+    .rol-info-header {
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .rol-info-icon {
+        font-size: 28px;
+    }
+
+    .rol-info-header h4 {
+        font-size: 15px;
+        margin-bottom: 4px;
+    }
+
+    .rol-info-header p {
+        font-size: 12px;
+    }
+
+    .rol-permisos {
+        padding-top: 10px;
+    }
+
+    .rol-permisos strong {
+        font-size: 12px;
+        margin-bottom: 7px;
+    }
+
+    .rol-permisos li {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .btn {
+        padding: 12px 18px;
+        font-size: 14px;
+        gap: 8px;
+    }
+
+    .spinner-small {
+        width: 14px;
+        height: 14px;
+    }
+
+    .registro-footer {
+        padding-top: 14px;
+    }
+
+    .registro-footer p {
+        font-size: 12px;
+    }
+}
+
+/* Móviles pequeños (360px) */
+@media (max-width: 360px) {
+    .registro-left {
+        padding: 20px 16px;
+    }
+
+    .registro-brand {
+        margin-bottom: 30px;
+    }
+
+    .brand-logo-box {
+        width: 48px;
+        height: 48px;
+    }
+
+    .logo-icon {
+        font-size: 32px;
+    }
+
+    .registro-brand h1 {
+        font-size: 18px;
+    }
+
+    .brand-subtitle {
+        font-size: 11px;
     }
 
     .registro-info h3 {
@@ -466,21 +1136,118 @@
     }
 
     .info-list li {
-        padding: 20px;
-        font-size: 16px;
+        padding: 14px 16px;
+        font-size: 13px;
+        gap: 12px;
     }
 
     .info-icon {
-        font-size: 24px;
-        width: 45px;
-        height: 45px;
+        font-size: 18px;
+        width: 38px;
+        height: 38px;
+    }
+
+    .registro-right {
+        padding: 20px 16px;
     }
 
     .registro-card {
-        padding: 35px 28px;
+        padding: 26px 20px;
+        border-radius: 14px;
     }
 
     .registro-header h2 {
-        font-size: 28px;
+        font-size: 20px;
+    }
+
+    .registro-header p {
+        font-size: 12px;
+    }
+
+    .form-input,
+    .form-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .btn {
+        padding: 11px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Landscape para móviles */
+@media (max-height: 600px) and (orientation: landscape) {
+    .registro-container {
+        flex-direction: row;
+    }
+
+    .registro-left {
+        padding: 30px 40px;
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .registro-brand {
+        margin-bottom: 30px;
+    }
+
+    .registro-info {
+        margin-top: 25px;
+    }
+
+    .registro-info h3 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .info-list {
+        gap: 10px;
+    }
+
+    .info-list li {
+        padding: 14px 18px;
+    }
+
+    .registro-right {
+        padding: 30px 40px;
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .registro-card {
+        padding: 30px 25px;
+    }
+
+    .registro-header {
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+}
+
+/* Mejoras para pantallas táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        min-height: 48px;
+    }
+
+    .form-input,
+    .form-select {
+        min-height: 48px;
+    }
+
+    .info-list li:hover {
+        transform: none;
+    }
+
+    .info-list li:hover .info-icon {
+        transform: none;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: none;
     }
 }
