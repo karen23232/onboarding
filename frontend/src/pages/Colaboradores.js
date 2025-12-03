@@ -21,7 +21,6 @@ const Colaboradores = () => {
   const usuarioActual = JSON.parse(localStorage.getItem('user') || '{}');
   const rolUsuario = usuarioActual.rol || 'colaborador';
   
-  // CORRECCIÓN FINAL: Comparar con los roles en minúsculas de la base de datos
   const puedeGestionarColaboradores = 
     rolUsuario === 'admin' || 
     rolUsuario === 'rrhh';
@@ -78,10 +77,12 @@ const Colaboradores = () => {
     
     setModoEdicion(true);
     setColaboradorEditando(colaborador);
+    
+    // La fecha ya viene en formato YYYY-MM-DD desde el backend
     setFormData({
       nombre_completo: colaborador.nombre_completo,
       correo: colaborador.correo,
-      fecha_ingreso: colaborador.fecha_ingreso.split('T')[0],
+      fecha_ingreso: colaborador.fecha_ingreso || '',
       notas: colaborador.notas || ''
     });
     setMostrarModal(true);
@@ -161,6 +162,14 @@ const Colaboradores = () => {
     return true;
   });
 
+  const formatearFecha = (fechaString) => {
+    if (!fechaString) return '-';
+    
+    // Si ya viene en formato YYYY-MM-DD, solo formatear
+    const [año, mes, dia] = fechaString.split('-');
+    return `${dia}/${mes}/${año}`;
+  };
+
   if (loading) {
     return (
       <>
@@ -190,7 +199,6 @@ const Colaboradores = () => {
             </p>
           </div>
           
-          {/* Solo mostrar botón si tiene permisos */}
           {puedeGestionarColaboradores && (
             <button 
               onClick={() => setMostrarModal(true)} 
@@ -202,7 +210,6 @@ const Colaboradores = () => {
           )}
         </div>
 
-        {/* Mensaje informativo para colaboradores */}
         {!puedeGestionarColaboradores && (
           <div className="info-banner">
             <span className="info-icon">ℹ️</span>
@@ -331,7 +338,7 @@ const Colaboradores = () => {
                   <tr key={colaborador.id}>
                     <td className="td-name">{colaborador.nombre_completo}</td>
                     <td>{colaborador.correo}</td>
-                    <td>{new Date(colaborador.fecha_ingreso).toLocaleDateString('es-CO')}</td>
+                    <td>{formatearFecha(colaborador.fecha_ingreso)}</td>
                     <td>
                       {colaborador.onboarding_bienvenida ? (
                         <span className="badge badge-success">✓ Completado</span>
@@ -360,12 +367,7 @@ const Colaboradores = () => {
                         <span className="badge badge-warning">Pendiente</span>
                       )}
                     </td>
-                    <td>
-                      {colaborador.fecha_onboarding_tecnico 
-                        ? new Date(colaborador.fecha_onboarding_tecnico).toLocaleDateString('es-CO')
-                        : '-'
-                      }
-                    </td>
+                    <td>{formatearFecha(colaborador.fecha_onboarding_tecnico)}</td>
                     {puedeGestionarColaboradores && (
                       <td className="td-actions">
                         <button

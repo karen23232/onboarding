@@ -34,16 +34,15 @@ class Colaborador {
   }
 
   static async obtenerTodos() {
-    // Consulta simplificada que SIEMPRE devuelve colaboradores
     const query = `
       SELECT 
         id,
         nombre_completo,
         correo,
-        fecha_ingreso,
+        TO_CHAR(fecha_ingreso, 'YYYY-MM-DD') as fecha_ingreso,
         onboarding_bienvenida,
         onboarding_tecnico,
-        fecha_onboarding_tecnico,
+        TO_CHAR(fecha_onboarding_tecnico, 'YYYY-MM-DD') as fecha_onboarding_tecnico,
         notas,
         creado_en,
         actualizado_en
@@ -56,7 +55,21 @@ class Colaborador {
   }
 
   static async obtenerPorId(id) {
-    const query = `SELECT * FROM colaboradores WHERE id = $1`;
+    const query = `
+      SELECT 
+        id,
+        nombre_completo,
+        correo,
+        TO_CHAR(fecha_ingreso, 'YYYY-MM-DD') as fecha_ingreso,
+        onboarding_bienvenida,
+        onboarding_tecnico,
+        TO_CHAR(fecha_onboarding_tecnico, 'YYYY-MM-DD') as fecha_onboarding_tecnico,
+        notas,
+        creado_en,
+        actualizado_en
+      FROM colaboradores 
+      WHERE id = $1
+    `;
     const resultado = await pool.query(query, [id]);
     return resultado.rows[0];
   }
@@ -74,8 +87,14 @@ class Colaborador {
 
     Object.keys(datosActualizados).forEach(key => {
       if (datosActualizados[key] !== undefined) {
-        campos.push(`${key} = $${contador}`);
-        valores.push(datosActualizados[key]);
+        // Manejo especial para fecha_ingreso
+        if (key === 'fecha_ingreso') {
+          campos.push(`${key} = $${contador}::date`);
+          valores.push(datosActualizados[key]);
+        } else {
+          campos.push(`${key} = $${contador}`);
+          valores.push(datosActualizados[key]);
+        }
         contador++;
       }
     });
@@ -91,7 +110,17 @@ class Colaborador {
       UPDATE colaboradores 
       SET ${campos.join(', ')}
       WHERE id = $${contador}
-      RETURNING *
+      RETURNING 
+        id,
+        nombre_completo,
+        correo,
+        TO_CHAR(fecha_ingreso, 'YYYY-MM-DD') as fecha_ingreso,
+        onboarding_bienvenida,
+        onboarding_tecnico,
+        TO_CHAR(fecha_onboarding_tecnico, 'YYYY-MM-DD') as fecha_onboarding_tecnico,
+        notas,
+        creado_en,
+        actualizado_en
     `;
 
     const resultado = await pool.query(query, valores);
@@ -130,7 +159,21 @@ class Colaborador {
   }
 
   static async filtrarPorEstado(filtros) {
-    let query = `SELECT * FROM colaboradores WHERE 1=1`;
+    let query = `
+      SELECT 
+        id,
+        nombre_completo,
+        correo,
+        TO_CHAR(fecha_ingreso, 'YYYY-MM-DD') as fecha_ingreso,
+        onboarding_bienvenida,
+        onboarding_tecnico,
+        TO_CHAR(fecha_onboarding_tecnico, 'YYYY-MM-DD') as fecha_onboarding_tecnico,
+        notas,
+        creado_en,
+        actualizado_en
+      FROM colaboradores 
+      WHERE 1=1
+    `;
     const valores = [];
     let contador = 1;
 
