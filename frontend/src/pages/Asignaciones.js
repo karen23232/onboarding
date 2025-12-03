@@ -10,7 +10,7 @@ const Asignaciones = () => {
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(''); // ✅ NUEVO
+  const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState({
     colaborador_id: '',
     evento_id: ''
@@ -89,8 +89,10 @@ const Asignaciones = () => {
     }
 
     try {
-      setError(null); // ✅ Limpiar error anterior
-      setSuccessMessage(''); // ✅ Limpiar mensaje anterior
+      setError(null);
+      setSuccessMessage('');
+      setLoading(true); // ✅ Mostrar loading mientras crea
+      
       console.log('📤 Creando asignación:', formData);
 
       await asignacionesAPI.crear(
@@ -98,10 +100,8 @@ const Asignaciones = () => {
         parseInt(formData.evento_id)
       );
 
-      // ✅ MOSTRAR MENSAJE DE ÉXITO
+      // ✅ ÉXITO
       setSuccessMessage('✅ Asignación creada exitosamente');
-      
-      // ✅ LIMPIAR FORMULARIO
       setFormData({ colaborador_id: '', evento_id: '' });
       setMostrarFormulario(false);
       
@@ -116,7 +116,6 @@ const Asignaciones = () => {
     } catch (error) {
       console.error('❌ Error al crear asignación:', error);
       
-      // ✅ MEJORAR MANEJO DE ERRORES
       const mensajeError = error.response?.data?.mensaje || error.response?.data?.error;
       
       if (mensajeError && mensajeError.includes('ya existe')) {
@@ -129,6 +128,8 @@ const Asignaciones = () => {
       setTimeout(() => {
         setError(null);
       }, 5000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -162,10 +163,31 @@ const Asignaciones = () => {
   const handleCancelar = () => {
     setFormData({ colaborador_id: '', evento_id: '' });
     setMostrarFormulario(false);
-    setError(null); // ✅ Limpiar errores al cancelar
+    setError(null); // ✅ Limpiar error
+    setSuccessMessage(''); // ✅ Limpiar éxito
   };
 
-  if (loading) {
+  // ✅ NUEVO: Limpiar mensajes cuando se abre el formulario
+  const handleNuevaAsignacion = () => {
+    setError(null);
+    setSuccessMessage('');
+    setMostrarFormulario(!mostrarFormulario);
+  };
+
+  // ✅ NUEVO: Limpiar error cuando cambia la selección
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Limpiar error si había uno
+    if (error) {
+      setError(null);
+    }
+  };
+
+  if (loading && asignaciones.length === 0) {
     return (
       <>
         <Navbar />
@@ -191,7 +213,7 @@ const Asignaciones = () => {
             </p>
           </div>
           <button 
-            onClick={() => setMostrarFormulario(!mostrarFormulario)} 
+            onClick={handleNuevaAsignacion} // ✅ CAMBIO AQUÍ
             className="btn btn-primary"
             disabled={colaboradores.length === 0 || eventos.length === 0}
           >
@@ -230,15 +252,6 @@ const Asignaciones = () => {
         {mostrarFormulario && (
           <div className="form-card">
             <h3>Nueva Asignación</h3>
-            
-            {/* Debug info - Remover en producción */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="debug-box">
-                <strong>Debug:</strong> 
-                Colaboradores: {colaboradores.length} | 
-                Eventos: {eventos.length}
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="assignment-form">
               <div className="form-row">
@@ -248,7 +261,7 @@ const Asignaciones = () => {
                     id="colaborador_id"
                     name="colaborador_id"
                     value={formData.colaborador_id}
-                    onChange={(e) => setFormData({...formData, colaborador_id: e.target.value})}
+                    onChange={(e) => handleInputChange('colaborador_id', e.target.value)} // ✅ CAMBIO AQUÍ
                     className="form-input"
                     required
                   >
@@ -272,7 +285,7 @@ const Asignaciones = () => {
                     id="evento_id"
                     name="evento_id"
                     value={formData.evento_id}
-                    onChange={(e) => setFormData({...formData, evento_id: e.target.value})}
+                    onChange={(e) => handleInputChange('evento_id', e.target.value)} // ✅ CAMBIO AQUÍ
                     className="form-input"
                     required
                   >
@@ -302,9 +315,9 @@ const Asignaciones = () => {
                 <button 
                   type="submit" 
                   className="btn btn-primary"
-                  disabled={colaboradores.length === 0 || eventos.length === 0}
+                  disabled={loading || colaboradores.length === 0 || eventos.length === 0}
                 >
-                  Crear Asignación
+                  {loading ? 'Creando...' : 'Crear Asignación'}
                 </button>
               </div>
             </form>
