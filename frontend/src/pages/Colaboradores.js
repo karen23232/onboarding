@@ -78,11 +78,16 @@ const Colaboradores = () => {
     setModoEdicion(true);
     setColaboradorEditando(colaborador);
     
-    // La fecha ya viene en formato YYYY-MM-DD desde el backend
+    // Limpiar la fecha de cualquier timezone
+    let fechaLimpia = '';
+    if (colaborador.fecha_ingreso) {
+      fechaLimpia = colaborador.fecha_ingreso.split('T')[0];
+    }
+    
     setFormData({
       nombre_completo: colaborador.nombre_completo,
       correo: colaborador.correo,
-      fecha_ingreso: colaborador.fecha_ingreso || '',
+      fecha_ingreso: fechaLimpia,
       notas: colaborador.notas || ''
     });
     setMostrarModal(true);
@@ -162,11 +167,13 @@ const Colaboradores = () => {
     return true;
   });
 
+  // FUNCIÓN CORREGIDA para formatear fechas
   const formatearFecha = (fechaString) => {
     if (!fechaString) return '-';
     
-    // Si ya viene en formato YYYY-MM-DD, solo formatear
-    const [año, mes, dia] = fechaString.split('-');
+    // Remover timezone si existe y tomar solo la fecha
+    const soloFecha = fechaString.split('T')[0];
+    const [año, mes, dia] = soloFecha.split('-');
     return `${dia}/${mes}/${año}`;
   };
 
