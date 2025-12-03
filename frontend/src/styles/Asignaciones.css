@@ -50,7 +50,7 @@
     color: #1976d2;
 }
 
-/* ===== ESTILOS NUEVOS A AGREGAR ===== */
+/* ===== ESTILOS NUEVOS ===== */
 
 /* Alertas */
 .alert {
@@ -78,8 +78,28 @@
 
 .alert-danger {
     background-color: #f8d7da;
-    border: 1px solid #dc3545;
+    border: 1px solid #f5c6cb;
     color: #721c24;
+    animation: slideInFromTop 0.3s ease-out;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    animation: slideInFromTop 0.3s ease-out;
+}
+
+/* Animación para alertas */
+@keyframes slideInFromTop {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 /* Error container */
@@ -144,7 +164,23 @@
     color: #dc3545;
 }
 
+.form-group small.text-success {
+    color: #28a745;
+}
+
 .form-group small.text-muted {
+    color: #6c757d;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+
+.text-success {
+    color: #28a745;
+}
+
+.text-muted {
     color: #6c757d;
 }
 
@@ -229,6 +265,7 @@
     font-size: 12px;
     font-family: "Courier New", monospace;
     border: 1px solid #dee2e6;
+    overflow-x: auto;
 }
 
 .debug-box strong {
@@ -389,29 +426,131 @@
     background-color: #5a6268;
 }
 
-/* Responsive */
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Tablets y pantallas medianas (768px - 1024px) */
+@media (max-width: 1024px) {
+    .form-card {
+        padding: 25px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 12px;
+        font-size: 13px;
+    }
+}
+
+/* Tablets (768px - 991px) */
+@media (max-width: 991px) {
+    .form-row {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .empty-state {
+        padding: 40px 20px;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+    }
+
+    .empty-state h3 {
+        font-size: 20px;
+    }
+
+    .error-container {
+        padding: 40px 20px;
+    }
+
+    .error-container h2 {
+        font-size: 20px;
+    }
+}
+
+/* Tablets pequeñas y móviles grandes (768px) */
 @media (max-width: 768px) {
     .page-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 15px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+    }
+
+    .form-card {
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .form-card h3 {
+        font-size: 18px;
+        margin-bottom: 20px;
     }
 
     .table-container {
         overflow-x: auto;
+        border-radius: 12px;
     }
 
     .data-table {
         min-width: 600px;
     }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .alert {
+        padding: 10px 12px;
+        font-size: 13px;
+        gap: 8px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+
+    .loading-container {
+        min-height: 300px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border-width: 3px;
+    }
 }
 
+/* Móviles (640px) */
 @media (max-width: 640px) {
     .form-row {
         grid-template-columns: 1fr;
+        gap: 15px;
     }
 
     .form-actions {
         flex-direction: column;
+        gap: 10px;
     }
 
     .form-actions .btn {
@@ -420,80 +559,180 @@
     }
 
     .page-header h1 {
-        font-size: 24px;
+        font-size: 22px;
     }
-    /* ===== AGREGAR ESTOS ESTILOS AL ARCHIVO Asignaciones.css ===== */
 
-    /* Alert Success (FALTABA) */
-    .alert-success {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-        padding: 12px 16px;
-        border-radius: 8px;
+    .form-card {
+        padding: 16px;
         margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    }
+
+    .form-input {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        padding: 30px 15px;
+    }
+
+    .empty-icon {
+        font-size: 40px;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+    }
+
+    .empty-state p {
         font-size: 14px;
-        font-weight: 600;
-        animation: slideInFromTop 0.3s ease-out;
     }
 
-    /* Animación para alertas */
-    @keyframes slideInFromTop {
-        from {
-            transform: translateY(-20px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
+    .error-container {
+        padding: 30px 15px;
     }
 
-    /* Alert Danger (ya existía pero mejorada) */
-    .alert-danger {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
-        padding: 12px 16px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    .error-container h2 {
+        font-size: 18px;
+    }
+
+    .error-container p {
         font-size: 14px;
-        font-weight: 600;
-        animation: slideInFromTop 0.3s ease-out;
     }
 
-    /* Mejorar el debug box */
-    .debug-box {
-        background: #f8f9fa;
-        padding: 12px;
-        border-radius: 6px;
-        margin-bottom: 15px;
+    .btn-icon {
+        font-size: 16px;
+        padding: 6px;
+    }
+}
+
+/* Móviles pequeños (480px) */
+@media (max-width: 480px) {
+    .alert {
+        padding: 8px 10px;
         font-size: 12px;
-        font-family: "Courier New", monospace;
-        border: 1px solid #dee2e6;
+        gap: 6px;
+        flex-wrap: wrap;
     }
 
-    .debug-box strong {
-        color: #003da5;
-        font-weight: 700;
+    .page-header h1 {
+        font-size: 20px;
     }
 
-    /* Texto de error/éxito en form-group */
-    .text-danger {
-        color: #dc3545;
+    .page-subtitle {
+        font-size: 13px;
     }
 
-    .text-success {
-        color: #28a745;
+    .form-card {
+        padding: 12px;
+        border-radius: 10px;
     }
 
-    .text-muted {
-        color: #6c757d;
+    .form-card h3 {
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+    }
+
+    .form-input {
+        padding: 9px 12px;
+        font-size: 12px;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        font-size: 12px;
+        gap: 6px;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    .loading-container {
+        min-height: 250px;
+        gap: 15px;
+    }
+
+    .spinner {
+        width: 35px;
+        height: 35px;
+    }
+
+    .loading-container p {
+        font-size: 14px;
+    }
+
+    .empty-icon {
+        font-size: 36px;
+        margin-bottom: 15px;
+    }
+
+    .empty-state h3 {
+        font-size: 16px;
+    }
+
+    .empty-state p {
+        font-size: 13px;
+    }
+
+    .debug-box {
+        padding: 10px;
+        font-size: 11px;
+    }
+}
+
+/* Móviles muy pequeños (360px) */
+@media (max-width: 360px) {
+    .page-header h1 {
+        font-size: 18px;
+    }
+
+    .form-card {
+        padding: 10px;
+    }
+
+    .form-card h3 {
+        font-size: 15px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        font-size: 11px;
+    }
+
+    .alert {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+}
+
+/* Landscape para móviles */
+@media (max-height: 500px) and (orientation: landscape) {
+    .loading-container {
+        min-height: 200px;
+    }
+
+    .empty-state,
+    .error-container {
+        padding: 20px 15px;
+    }
+
+    .page-header {
+        margin-bottom: 20px;
+    }
+
+    .form-card {
+        margin-bottom: 20px;
     }
 }
