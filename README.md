@@ -98,7 +98,7 @@ https://onboarding-kappa-nine.vercel.app
 Backend — Railway
 
 ✔ API:
-https://tu-api.up.railway.app
+https://onboarding-production-dc1c.up.railway.app
 
 Base de Datos — Railway
 
